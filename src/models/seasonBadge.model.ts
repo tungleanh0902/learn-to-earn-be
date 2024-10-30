@@ -6,6 +6,14 @@ const seasonBadgeSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    seasonBegin: {
+        type: Number,
+        required: true
+    },
+    seasonEnd: {
+        type: Number,
+        required: true
+    },
     image: {
         type: String,
         required: true

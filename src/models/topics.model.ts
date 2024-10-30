@@ -5,6 +5,7 @@ const topicSchema = new mongoose.Schema({
     content: {
         type: String,
         required: true,
+        unique: true
     },
     createdBy: {
         type: mongoose.Types.ObjectId,

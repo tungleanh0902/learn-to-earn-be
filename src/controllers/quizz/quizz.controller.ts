@@ -1,3 +1,4 @@
+import { checkBoughtSeaconBadge } from "controllers/seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 
 const Lesson = require('../../models/lessons.model')
@@ -5,34 +6,28 @@ const Question = require('../../models/questions.model')
 const Option = require('../../models/options.model')
 const QuizzAnswer = require('../../models/quizzAnswer.model')
 const User = require('../../models/users.model')
-const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
 
 require('dotenv').config()
 
 export const onManageLesson = {
     doSaveLesson: async (req: any, res: any, next: any) => {
         try {
-            const title = req.body.title
-            const content = req.body.content
             const _id = req.user.id
-            const questions = req.body.question
+            const lessons = req.body.lessons
 
-            let lesson = await Lesson.create({
-                title,
-                content,
-                createdBy: _id
-            })
-
-            for (let qIdx = 0; qIdx < questions.length; qIdx++) {
-                await saveQuestions(questions[qIdx], req.user.id, lesson._id)
+            for (let lIdx = 0; lIdx < lessons.length; lIdx++) {
+                let lesson = await Lesson.create({
+                    title: lessons[lIdx].title,
+                    content: lessons[lIdx].content,
+                    createdBy: _id
+                })
+                for (let qIdx = 0; qIdx < lessons[lIdx].questions.length; qIdx++) {
+                    await saveQuestions(lessons[lIdx].questions[qIdx], req.user.id, lesson._id)
+                }   
             }
 
             return res.status(200).send({
-                data: {
-                    title,
-                    content,
-                    questions
-                }
+                data: "success"
             });
         } catch (err: any) {
             console.log(err.message)
@@ -203,7 +198,7 @@ export const onManageLesson = {
     },
 
     doGetAllLessons: async (req: any, res: any, next: any) => {
-        let limit = parseInt(req.query.page) || 10;
+        let limit = parseInt(req.query.limit) || 10;
         let page = parseInt(req.query.page) || 1;
 
         const startIndex = (page - 1) * limit;
@@ -211,7 +206,7 @@ export const onManageLesson = {
 
         const lessons = await Lesson.find().skip(startIndex).limit(limit);
 
-        res.status(200).send({
+        return res.status(200).send({
             metadata: {
                 page,
                 limit,
@@ -223,7 +218,7 @@ export const onManageLesson = {
     },
 
     doGetQuestionsinLesson: async (req: any, res: any, next: any) => {
-        let limit = parseInt(req.query.page) || 10;
+        let limit = parseInt(req.query.limit) || 10;
         let page = parseInt(req.query.page) || 1;
         let lessonId = req.query.lessonId;
 
@@ -260,7 +255,9 @@ export const onManageLesson = {
             }
         ])
 
-        res.status(200).send(questions);
+        return res.status(200).send({
+            data: questions
+        });
     },
 
     doGetRandomLesson: async (req: any, res: any, next: any) => {
@@ -314,7 +311,9 @@ export const onManageLesson = {
             }
         ])
 
-        res.status(200).send(questions);
+        return res.status(200).send({
+            data: questions
+        });
     },
 
     doAnswerQuizz: async (req: any, res: any, next: any) => {
@@ -327,20 +326,17 @@ export const onManageLesson = {
             })
 
             const startOfToday = new Date();
-            startOfToday.setHours(0, 0, 0, 0);
 
             // multiplier + 0.1 khi diem danh
             if (option.isCorrect == true) {
-                let user = User.findOne({ _id })
-                let seasonBadge = SeasonBadgeTx.findOne({ userId: _id })
-                const currentDate = new Date();
-                let hasThisSeasonBadge = (currentDate.getTime() - seasonBadge.createdAt) < 60 * 60 * 24 * 30 * 3 ? true : false
+                let user = await User.findOne({ _id })
 
                 let tickets = 0;
-                if (hasThisSeasonBadge == true) {
+                if (await checkBoughtSeaconBadge(user._id) == true) {
                     tickets += 1
                 } else {
                     // count document that this user answered today
+                    startOfToday.setHours(0, 0, 0, 0);
                     let answers = await QuizzAnswer.countDocuments({
                         createdAt: {
                             $gte: startOfToday

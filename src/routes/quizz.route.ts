@@ -15,7 +15,7 @@ manageQuizz.post("/change_option", validate.auth, validate.isAdmin, onManageLess
 manageQuizz.post("/add_question", validate.auth, validate.isAdmin, onManageLesson.doAddQuestion);
 
 manageQuizz.post("/remove_lesson", validate.auth, validate.isAdmin, onManageLesson.doRemoveLesson);
-1
+
 manageQuizz.post("/remove_question", validate.auth, validate.isAdmin, onManageLesson.doRemoveQuestion);
 
 manageQuizz.post("/remove_option", validate.auth, validate.isAdmin, onManageLesson.doRemoveLesson);
