@@ -19,7 +19,7 @@ export const onManageSocialTask = {
                     link: task.link,
                     title: task.title,
                     content: task.content,
-                    point: task.point,
+                    points: task.point,
                     createdBy: _id
                 })
             }
@@ -44,7 +44,7 @@ export const onManageSocialTask = {
             const hidden = req.body.hidden
 
             await SocialTask.findOneAndUpdate({
-                _id: taskId
+                _id: new mongoose.Types.ObjectId(taskId)
             }, {
                 link,
                 title,
@@ -69,21 +69,31 @@ export const onManageSocialTask = {
             const _id = req.user.id
             const taskId = req.body.taskId
 
-            let task = await SocialTaskDone.findOne({
-                taskId,
-                userId: _id
+            let taskDone = await SocialTaskDone.findOne({
+                taskId: new mongoose.Types.ObjectId(taskId),
+                userId: new mongoose.Types.ObjectId(_id)
             })
-            let user = await User.findOne({ _id })
-            if (task != null) {
+
+            let task = await SocialTask.findOne({
+                _id: new mongoose.Types.ObjectId(taskId)
+            })
+            
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            
+            if (taskDone == null) {
                 await User.findOneAndUpdate({
-                    _id
+                    _id: new mongoose.Types.ObjectId(_id)
                 }, {
-                    points: user.points + task.point * user.multiplier,
+                    points: user.points + task.points * user.multiplier,
                 })
+                
+                await SocialTaskDone.create({
+                    taskId: new mongoose.Types.ObjectId(taskId),
+                    userId: new mongoose.Types.ObjectId(_id)
+                })
+
                 return res.status(200).send({
-                    data: {
-                        point: task.point * user.multiplier
-                    }
+                    data: task.points * user.multiplier
                 });
             } else {
                 return res.status(400).send({
@@ -100,7 +110,7 @@ export const onManageSocialTask = {
 
     doGetAllTasks: async (req: any, res: any, next: any) => {
         try {
-            const tasks = await SocialTask.aggregate()
+            const tasks = await SocialTask.find()
             return res.status(200).send({
                 data: tasks
             });
@@ -119,7 +129,7 @@ export const onManageSocialTask = {
                 { "$match": { "hidden": false } },
                 {
                     $lookup: {
-                        from: "socialTaskDone",
+                        from: "socialtaskdones",
                         localField: "_id",
                         foreignField: "taskId",
                         as: "doneByUsers"
@@ -129,7 +139,7 @@ export const onManageSocialTask = {
                     $addFields: {
                         isDone: {
                             $cond: {
-                                if: { $gt: [{ $size: { $filter: { input: "$doneByUsers", as: "task", cond: { $eq: ["$$task.userId", _id] } } } }, 0] },
+                                if: { $gt: [{ $size: { $filter: { input: "$doneByUsers", as: "task", cond: { $eq: ["$$task.userId", new mongoose.Types.ObjectId(_id)] } } } }, 0] },
                                 then: true,
                                 else: false
                             }
@@ -138,7 +148,10 @@ export const onManageSocialTask = {
                 },
                 {
                     $project: {
-                        taskName: 1, // Include other task fields you need
+                        link: 1,
+                        title: 1,
+                        content: 1,
+                        point: 1,
                         isDone: 1
                     }
                 }

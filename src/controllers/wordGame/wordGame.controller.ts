@@ -1,5 +1,5 @@
-import { shuffle } from "helper/helper"
 import mongoose from "mongoose"
+import { shuffle } from "./../../helper/helper"
 
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
@@ -62,7 +62,7 @@ export const onManageWordGame = {
             let correct = parseInt(req.query.correct) || 10;
 
             const _id = req.user.id
-            let user = await User.findOne({ _id })
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             if (user.tickets == 0) {
                 return res.status(400).send({
                     message: "Out of tickets"
@@ -79,12 +79,12 @@ export const onManageWordGame = {
             })
 
             const correctWords = await Words.aggregate([
-                { "$match": { "topicId": topic[0]._id } },
+                { "$match": { "topicId": new mongoose.Types.ObjectId(topic[0]._id) } },
                 { $sample: { size: correct } }
             ])
 
             const wrongWords = await Words.aggregate([
-                { "$match": { "topicId": { $ne: topic[0]._id } } },
+                { "$match": { "topicId": { $ne: new mongoose.Types.ObjectId(topic[0]._id) } } },
                 { $sample: { size: total - correct } },
             ])
 

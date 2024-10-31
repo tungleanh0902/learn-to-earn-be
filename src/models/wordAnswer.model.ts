@@ -13,7 +13,7 @@ const wordAnswerSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required: true
     },
-    point: {
+    points: {
         type: Number,
     }
 }, {

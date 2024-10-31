@@ -5,23 +5,23 @@ require('dotenv').config()
 
 export async function login (req: any, res: any) {
     try {
-        const signature = req.body.signature
-        const message = req.body.message
+        // const signature = req.body.signature
+        // const message = req.body.message
         const address = req.body.address
-        if (!signature || !message || !address) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid input"
-            })
-        }
-        //validation on email and password
-        const signerAddr = ethers.utils.verifyMessage(message, signature);
-        if (signerAddr.toLocaleLowerCase() != address) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid signature"
-            })
-        }
+        // if (!signature || !message || !address) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Invalid input"
+        //     })
+        // }
+        // //validation on email and password
+        // const signerAddr = ethers.utils.verifyMessage(message, signature);
+        // if (signerAddr.toLocaleLowerCase() != address) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Invalid signature"
+        //     })
+        // }
 
         //check for registered User
         let user = await User.findOne({ address })

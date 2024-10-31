@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 mongoose.Promise = global.Promise;
 
-const socialTaskSchema = new mongoose.Schema({
+const socialTaskDoneSchema = new mongoose.Schema({
     taskId: {
         type: mongoose.Types.ObjectId,
         required: true
@@ -14,4 +14,4 @@ const socialTaskSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.models.SocialTask || mongoose.model('SocialTask', socialTaskSchema);
+module.exports = mongoose.models.SocialTaskDone || mongoose.model('SocialTaskDone', socialTaskDoneSchema);

@@ -16,7 +16,7 @@ const optionSchema = new mongoose.Schema({
     },
     isCorrect: {
         type: Boolean,
-        required: true
+        required: false
     },
     isHidden: {
         type: Boolean,
@@ -26,4 +26,4 @@ const optionSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.models.Lesson || mongoose.model('Lesson', optionSchema);
+module.exports = mongoose.models.Option || mongoose.model('Option', optionSchema);

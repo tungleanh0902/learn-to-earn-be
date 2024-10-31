@@ -14,7 +14,7 @@ const socialTaskSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    point: {
+    points: {
         type: Number,
         required: true
     },

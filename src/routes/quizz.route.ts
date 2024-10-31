@@ -18,8 +18,6 @@ manageQuizz.post("/remove_lesson", validate.auth, validate.isAdmin, onManageLess
 
 manageQuizz.post("/remove_question", validate.auth, validate.isAdmin, onManageLesson.doRemoveQuestion);
 
-manageQuizz.post("/remove_option", validate.auth, validate.isAdmin, onManageLesson.doRemoveLesson);
-
 manageQuizz.get("/", validate.auth, validate.isAdmin, onManageLesson.doGetAllLessons);
 
 manageQuizz.get("/questions", validate.auth, validate.isAdmin, onManageLesson.doGetQuestionsinLesson);

@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 
 const User = require('../../models/users.model')
-const DailyAttendence = require('../../models/dailyAttendence.model')
+const DailyAttendence = require('../../models/dailyAttendance.model')
 
 require('dotenv').config()
 
@@ -78,10 +78,10 @@ export const onManageUser = {
                         users: { $push: "$$ROOT" }
                     }
                 },
-                { $unwind: "$users" },
+                { $unwind: { path: "$users", includeArrayIndex: "rank" } },
                 {
                     $addFields: {
-                        "users.rank": { $add: ["$users._id", 1] }
+                        "users.rank": { $add: ["$rank", 1] }
                     }
                 },
                 { $replaceRoot: { newRoot: "$users" } },
@@ -117,9 +117,9 @@ async function checkDailyAttendance(userId: string) {
     var today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    if (da.createdAt <= today.getTime()) {
-        return false;
-    } else {
+    if (da && da.createdAt > today) {
         return true;
+    } else {
+        return false;
     }
 }

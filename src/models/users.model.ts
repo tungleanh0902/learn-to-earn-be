@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
     address: {
         type: String,
         required: true,
+        unique: true
     },
     points: {
         type: Number,

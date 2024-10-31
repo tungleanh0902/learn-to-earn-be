@@ -43,7 +43,7 @@ export const onManageSeasonBadge = {
             const tokenId = req.body.tokenId
             const tx = req.body.tx
 
-            if (await checkBoughtSeaconBadge(_id) == true) {
+            if (await helperFunction.checkBoughtSeaconBadge(_id) == true) {
                 return res.status(400).send({
                     message: "Already bought this season badge"
                 });
@@ -78,7 +78,7 @@ export const onManageSeasonBadge = {
         try {
             const _id = req.user.id
             return res.status(200).send({
-                data: await checkBoughtSeaconBadge(_id)
+                data: await helperFunction.checkBoughtSeaconBadge(_id)
             })   
         } catch (err: any) {
             console.log(err.message)
@@ -91,7 +91,7 @@ export const onManageSeasonBadge = {
     doGetCurrentBadge: async (req: any, res: any, next: any) => {
         try {
             return res.status(200).send({
-                data: await getCurrentBadge()
+                data: await helperFunction.getCurrentBadge()
             })
         } catch (err: any) {
             console.log(err.message)
@@ -102,21 +102,23 @@ export const onManageSeasonBadge = {
     },
 }
 
-export async function getCurrentBadge() {
-    const startOfToday = new Date();
-    return await SeasonBadge.find({
-        "seasonBegin" : {$lt: startOfToday.getTime()},
-        "seasonEnd" : {$gt: startOfToday.getTime()},
-    }).sort({ createdAt: -1 })
-}
-
-export async function checkBoughtSeaconBadge(userId: string) {
-    let seasonBadgeTx = await SeasonBadgeTx.findOne({ userId: new mongoose.Types.ObjectId(userId) }).sort({ createdAt: -1 })
-    let seasonBadge = await getCurrentBadge()
-
-    let hasThisSeasonBadge = false
-    if (seasonBadgeTx.createdAt < seasonBadge.seasonEnd && seasonBadgeTx.createdAt > seasonBadge.seasonBegin) {
-        hasThisSeasonBadge = true
+export const helperFunction = {
+    getCurrentBadge: async () => {
+        const startOfToday = new Date();
+        return await SeasonBadge.find({
+            "seasonBegin" : {$lt: startOfToday},
+            "seasonEnd" : {$gt: startOfToday},
+        }).sort({ createdAt: -1 })
+    },
+    
+    checkBoughtSeaconBadge: async(userId: string) => {
+        let seasonBadgeTx = await SeasonBadgeTx.findOne({ userId: new mongoose.Types.ObjectId(userId) }).sort({ createdAt: -1 })
+        let seasonBadge = await helperFunction.getCurrentBadge()
+    
+        let hasThisSeasonBadge = false
+        if (seasonBadgeTx && seasonBadgeTx.createdAt < seasonBadge.seasonEnd && seasonBadgeTx.createdAt > seasonBadge.seasonBegin) {
+            hasThisSeasonBadge = true
+        }
+        return hasThisSeasonBadge
     }
-    return hasThisSeasonBadge
 }

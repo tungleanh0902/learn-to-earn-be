@@ -4,7 +4,7 @@ import { validate } from '../middlewares/authMiddle';
 
 export const manageBadge = Router()
 
-manageBadge.post("/new_badge", validate.auth, onManageSeasonBadge.doPublishNewSeasonBadge);
+manageBadge.post("/", validate.auth, validate.isAdmin, onManageSeasonBadge.doPublishNewSeasonBadge);
 
 manageBadge.post("/buy_nft", validate.auth, onManageSeasonBadge.doBuyNft);
 

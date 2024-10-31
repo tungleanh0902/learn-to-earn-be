@@ -1,5 +1,5 @@
-import { shuffle } from "helper/helper"
 import mongoose from "mongoose"
+import { shuffle } from "./../../helper/helper"
 
 const Sentence = require('../../models/sentences.model')
 const SentenceAnswer = require('../../models/sentenceAnswer.model')
@@ -34,7 +34,7 @@ export const onManageSentenceGame = {
     doGetSentenceGame: async (req: any, res: any, next: any) => {
         try {
             const _id = req.user.id
-            let user = await User.findOne({ _id })
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             if (user.tickets == 0) {
                 return res.status(400).send({
                     message: "Out of tickets"
@@ -74,7 +74,7 @@ export const onManageSentenceGame = {
     doAnswer: async (req: any, res: any, next: any) => {
         try {
             const _id = req.user.id
-            let user = await User.findOne({ _id })
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             if (user.tickets == 0) {
                 return res.status(400).send({
                     message: "Out of tickets"
@@ -88,26 +88,26 @@ export const onManageSentenceGame = {
             let points = 0;
             for (let index = 0; index < anwserIds.length; index++) {
                 const anwserId = anwserIds[index];
-                let sentenceAnswer = await SentenceAnswer.findOne({ _id: anwserId })
+                let sentenceAnswer = await SentenceAnswer.findOne({ _id: new mongoose.Types.ObjectId(anwserId) })
                 if (sentenceAnswer.userId !== _id || sentenceAnswer.content != null) {
                     return res.status(400).send({
                         message: "answer unvailable"
                     });
                 }
-                let sentence = await Sentence.findOne({ _id: sentenceIds[index] })
+                let sentence = await Sentence.findOne({ _id: new mongoose.Types.ObjectId(sentenceIds[index]) })
                 if (sentence.content.join() === contents[index].join()) {
                     points++;
                 }
 
                 await SentenceAnswer.findOneAndUpdate({
-                    _id
+                    _id: new mongoose.Types.ObjectId(_id)
                 }, {
                     contents: contents[index]
                 })
             }
 
             await User.findOneAndUpdate({
-                _id
+                _id: new mongoose.Types.ObjectId(_id)
             }, {
                 points: user.points + points * user.multiplier,
                 tickets: user.tickets - 1,

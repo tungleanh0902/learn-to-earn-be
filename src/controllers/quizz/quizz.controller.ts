@@ -1,5 +1,5 @@
-import { checkBoughtSeaconBadge } from "controllers/seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
+import { helperFunction } from "./../seasonBadge/seasonBadge.controller"
 
 const Lesson = require('../../models/lessons.model')
 const Question = require('../../models/questions.model')
@@ -23,7 +23,7 @@ export const onManageLesson = {
                 })
                 for (let qIdx = 0; qIdx < lessons[lIdx].questions.length; qIdx++) {
                     await saveQuestions(lessons[lIdx].questions[qIdx], req.user.id, lesson._id)
-                }   
+                }
             }
 
             return res.status(200).send({
@@ -41,17 +41,17 @@ export const onManageLesson = {
         try {
             const lessonId = req.body.lessonId
             const content = req.body.content
-            const points = req.body.points
+            const title = req.body.title
 
-            let lesson = await Lesson.findOneAndUpdate({
-                lessonId
+            await Lesson.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(lessonId)
             }, {
+                title,
                 content,
-                points
             })
 
             return res.status(200).send({
-                data: lesson
+                data: "success"
             });
         } catch (err: any) {
             return res.status(400).send({
@@ -67,7 +67,7 @@ export const onManageLesson = {
             const content = req.body.content
 
             let question = await Question.findOneAndUpdate({
-                questionId
+                _id: new mongoose.Types.ObjectId(questionId)
             }, {
                 points,
                 content
@@ -90,7 +90,7 @@ export const onManageLesson = {
             const content = req.body.content
 
             let option = await Option.findOneAndUpdate({
-                optionId
+                _id: new mongoose.Types.ObjectId(optionId)
             }, {
                 isCorrect,
                 content
@@ -109,20 +109,20 @@ export const onManageLesson = {
     doAddQuestion: async (req: any, res: any, next: any) => {
         try {
             const lessonId = req.body.lessonId
-            const isCorrect = req.body.isCorrect
-            const content = req.body.content
-            const options = req.body.options
-            const points = req.body.points
+            const questions = req.body.questions
 
-            let question = await saveQuestions({
-                content,
-                isCorrect,
-                points,
-                options,
-            }, req.user.id, lessonId)
+            for (let index = 0; index < questions.length; index++) {
+                const question = questions[index];
+                await saveQuestions({
+                    content: question.content,
+                    isCorrect: question.content,
+                    points: question.points,
+                    options: question.options,
+                }, req.user.id, lessonId)
+            }
 
             return res.status(200).send({
-                data: question
+                data: "success"
             });
         } catch (err: any) {
             return res.status(400).send({
@@ -136,7 +136,7 @@ export const onManageLesson = {
             const lessonId = req.body.lessonId
 
             await Lesson.findOneAndUpdate({
-                lessonId
+                _id: new mongoose.Types.ObjectId(lessonId)
             }, {
                 isHidden: true,
             })
@@ -158,7 +158,7 @@ export const onManageLesson = {
             const questionId = req.body.questionId
 
             await Question.findOneAndUpdate({
-                questionId
+                _id: new mongoose.Types.ObjectId(questionId)
             }, {
                 isHidden: true,
             })
@@ -166,28 +166,6 @@ export const onManageLesson = {
             return res.status(200).send({
                 data: {
                     _id: questionId
-                }
-            });
-        } catch (err: any) {
-            return res.status(400).send({
-                message: err.message
-            });
-        }
-    },
-
-    doRemoveOption: async (req: any, res: any, next: any) => {
-        try {
-            const optionId = req.body.optionId
-
-            await Lesson.findOneAndUpdate({
-                optionId
-            }, {
-                isHidden: true,
-            })
-
-            return res.status(200).send({
-                data: {
-                    _id: optionId
                 }
             });
         } catch (err: any) {
@@ -233,11 +211,11 @@ export const onManageLesson = {
             const total = await Lesson.countDocuments();
 
             const questions = await Question.aggregate([
-                { '$match': { "lessonId": new mongoose.Types.ObjectId(lessonId) } },
+                { '$match': { "lessonId": new mongoose.Types.ObjectId(lessonId), "isHidden": false } },
                 { '$sort': { 'createdAt': -1 } },
                 {
                     '$lookup': {
-                        from: "option",
+                        from: "options",
                         localField: "_id",
                         foreignField: "questionId",
                         as: "options"
@@ -249,21 +227,25 @@ export const onManageLesson = {
                             {
                                 '$group': {
                                     _id: null,
-                                    page,
-                                    limit,
+                                    // page: page,
+                                    // limit: limit,
                                     total: { '$sum': 1 },
-                                    pages: Math.ceil(total / limit),
+                                    // pages: Math.ceil(total / limit),
                                 }
                             },
                             { '$project': { _id: 0, total: 1, page: 1 } }
                         ],
                         data: [{ $skip: startIndex }, { $limit: limit }]
                     }
-                }
+                },
+                { '$unwind': "$metadata" }
             ])
+            questions[0].metadata.page = page
+            questions[0].metadata.limit = limit
+            questions[0].metadata.pages = Math.ceil(total / limit)
 
             return res.status(200).send({
-                data: questions
+                data: questions[0]
             });
         } catch (err: any) {
             return res.status(400).send({
@@ -274,12 +256,28 @@ export const onManageLesson = {
 
     doGetRandomLesson: async (req: any, res: any, next: any) => {
         try {
-            const questions = await Lesson.aggregate([
+            const _id = req.user.id
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            let answers = await QuizzAnswer.countDocuments({
+                createdAt: {
+                    $gte: startOfToday
+                },
+                userId: new mongoose.Types.ObjectId(_id)
+            })
+
+            if (answers == 25) {
+                return res.status(400).send({
+                    message: "Out of limit today"
+                });
+            }
+
+            const lessons = await Lesson.aggregate([
                 { $match: { isHidden: false } },
                 { $sample: { size: 1 } },
                 {
                     '$lookup': {
-                        from: "question",
+                        from: "questions",
                         let: { lessonId: "$_id" },
                         pipeline: [
                             {
@@ -290,7 +288,7 @@ export const onManageLesson = {
                                 }
                             },
                             {
-                                $sample: { size: 25 }
+                                $sample: { size: 25 - answers }
                             }
                         ],
                         as: "questions"
@@ -300,7 +298,7 @@ export const onManageLesson = {
                 { $match: { "questions.isHidden": false } },
                 {
                     $lookup: {
-                        from: "option",
+                        from: "options",
                         localField: "questions._id",
                         foreignField: "questionId",
                         as: "questions.options"
@@ -323,9 +321,9 @@ export const onManageLesson = {
                     }
                 }
             ])
-    
+
             return res.status(200).send({
-                data: questions
+                data: lessons
             });
         } catch (err: any) {
             return res.status(400).send({
@@ -343,14 +341,18 @@ export const onManageLesson = {
                 _id: new mongoose.Types.ObjectId(optionId)
             })
 
+            let question = await Question.findOne({
+                _id: new mongoose.Types.ObjectId(option.questionId)
+            })
+            
             const startOfToday = new Date();
-
+            let newPonts = 0
             // multiplier + 0.1 khi diem danh
             if (option.isCorrect == true) {
                 let user = await User.findOne({ _id })
 
                 let tickets = 0;
-                if (await checkBoughtSeaconBadge(user._id) == true) {
+                if (await helperFunction.checkBoughtSeaconBadge(user._id) == true) {
                     tickets += 1
                 } else {
                     // count document that this user answered today
@@ -364,22 +366,22 @@ export const onManageLesson = {
                         tickets += 1
                     }
                 }
-
+                newPonts = question.points * user.multiplier
                 await User.findOneAndUpdate({
                     _id
                 }, {
-                    points: user.points + 1 * user.multiplier,
+                    points: user.points + newPonts,
                     tickets,
                 })
             }
 
-            let quizzAnswer = await QuizzAnswer.create({
+            await QuizzAnswer.create({
                 optionId,
                 userId: _id,
             })
 
             return res.status(200).send({
-                data: quizzAnswer
+                data: newPonts
             });
         } catch (err: any) {
             console.log(err.message)
