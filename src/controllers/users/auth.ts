@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 import { ethers } from 'ethers';
 require('dotenv').config()
 
-exports.login = async (req: any, res: any) => {
+export async function login (req: any, res: any) {
     try {
         const signature = req.body.signature
         const message = req.body.message

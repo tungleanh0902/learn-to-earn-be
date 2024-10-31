@@ -3,7 +3,13 @@ import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import { config } from './config';
 import cors from 'cors';
+
 import { manageQuizz } from "./routes/quizz.route";
+import { manageBadge } from "./routes/seasonBadge.route";
+import { manageSentenceGame } from "./routes/sentenceGame.route";
+import { manageUser } from "./routes/user.route";
+import { manageWordGame } from "./routes/wordGame.route";
+import { manageSocialTask } from "./routes/socialTask.route";
 
 const app = express();
 app.use(cors()); 
@@ -28,6 +34,11 @@ app.use(function(req, res, next) {
 });
 
 app.use("/api/quizz", manageQuizz);
+app.use("/api/badge", manageBadge);
+app.use("/api/sentence", manageSentenceGame);
+app.use("/api/user", manageUser);
+app.use("/api/word", manageWordGame);
+app.use("/api/socialTask", manageSocialTask);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

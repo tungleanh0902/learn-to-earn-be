@@ -4,7 +4,6 @@ mongoose.Promise = global.Promise;
 const sentenceAnswerSchema = new mongoose.Schema({
     content: {
         type: String,
-        required: true,
     },
     userId: {
         type: mongoose.Types.ObjectId,

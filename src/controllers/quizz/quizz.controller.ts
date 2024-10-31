@@ -198,122 +198,140 @@ export const onManageLesson = {
     },
 
     doGetAllLessons: async (req: any, res: any, next: any) => {
-        let limit = parseInt(req.query.limit) || 10;
-        let page = parseInt(req.query.page) || 1;
+        try {
+            let limit = parseInt(req.query.limit) || 10;
+            let page = parseInt(req.query.page) || 1;
 
-        const startIndex = (page - 1) * limit;
-        const total = await Lesson.countDocuments();
+            const startIndex = (page - 1) * limit;
+            const total = await Lesson.countDocuments();
 
-        const lessons = await Lesson.find().skip(startIndex).limit(limit);
+            const lessons = await Lesson.find().skip(startIndex).limit(limit);
 
-        return res.status(200).send({
-            metadata: {
-                page,
-                limit,
-                total,
-                pages: Math.ceil(total / limit),
-            },
-            data: lessons
-        });
+            return res.status(200).send({
+                metadata: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit),
+                },
+                data: lessons
+            });
+        } catch (err: any) {
+            return res.status(400).send({
+                message: err.message
+            });
+        }
     },
 
     doGetQuestionsinLesson: async (req: any, res: any, next: any) => {
-        let limit = parseInt(req.query.limit) || 10;
-        let page = parseInt(req.query.page) || 1;
-        let lessonId = req.query.lessonId;
+        try {
+            let limit = parseInt(req.query.limit) || 10;
+            let page = parseInt(req.query.page) || 1;
+            let lessonId = req.query.lessonId;
 
-        const startIndex = (page - 1) * limit;
-        const total = await Lesson.countDocuments();
+            const startIndex = (page - 1) * limit;
+            const total = await Lesson.countDocuments();
 
-        const questions = await Question.aggregate([
-            { '$match': { "lessonId": new mongoose.Types.ObjectId(lessonId) } },
-            { '$sort': { 'createdAt': -1 } },
-            {
-                '$lookup': {
-                    from: "option",
-                    localField: "_id",
-                    foreignField: "questionId",
-                    as: "options"
+            const questions = await Question.aggregate([
+                { '$match': { "lessonId": new mongoose.Types.ObjectId(lessonId) } },
+                { '$sort': { 'createdAt': -1 } },
+                {
+                    '$lookup': {
+                        from: "option",
+                        localField: "_id",
+                        foreignField: "questionId",
+                        as: "options"
+                    }
+                },
+                {
+                    '$facet': {
+                        metadata: [
+                            {
+                                '$group': {
+                                    _id: null,
+                                    page,
+                                    limit,
+                                    total: { '$sum': 1 },
+                                    pages: Math.ceil(total / limit),
+                                }
+                            },
+                            { '$project': { _id: 0, total: 1, page: 1 } }
+                        ],
+                        data: [{ $skip: startIndex }, { $limit: limit }]
+                    }
                 }
-            },
-            {
-                '$facet': {
-                    metadata: [
-                        {
-                            '$group': {
-                                _id: null,
-                                page,
-                                limit,
-                                total: { '$sum': 1 },
-                                pages: Math.ceil(total / limit),
-                            }
-                        },
-                        { '$project': { _id: 0, total: 1, page: 1 } }
-                    ],
-                    data: [{ $skip: startIndex }, { $limit: limit }]
-                }
-            }
-        ])
+            ])
 
-        return res.status(200).send({
-            data: questions
-        });
+            return res.status(200).send({
+                data: questions
+            });
+        } catch (err: any) {
+            return res.status(400).send({
+                message: err.message
+            });
+        }
     },
 
     doGetRandomLesson: async (req: any, res: any, next: any) => {
-        const questions = await Lesson.aggregate([
-            { $match: { isHidden: false } },
-            { $sample: { size: 1 } },
-            {
-                '$lookup': {
-                    from: "question",
-                    let: { lessonId: "$_id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $eq: ["$lessonId", "$$lessonId"]
+        try {
+            const questions = await Lesson.aggregate([
+                { $match: { isHidden: false } },
+                { $sample: { size: 1 } },
+                {
+                    '$lookup': {
+                        from: "question",
+                        let: { lessonId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ["$lessonId", "$$lessonId"]
+                                    }
                                 }
+                            },
+                            {
+                                $sample: { size: 25 }
                             }
-                        },
-                        {
-                            $sample: { size: 25 }
-                        }
-                    ],
-                    as: "questions"
+                        ],
+                        as: "questions"
+                    }
+                },
+                { $unwind: "$questions" },
+                { $match: { "questions.isHidden": false } },
+                {
+                    $lookup: {
+                        from: "option",
+                        localField: "questions._id",
+                        foreignField: "questionId",
+                        as: "questions.options"
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$_id",
+                        title: { $first: "$title" },
+                        content: { $first: "$content" },
+                        questions: { $push: "$questions" }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        title: 1,
+                        content: 1,
+                        questions: 1
+                    }
                 }
-            },
-            { $unwind: "$questions" },
-            { $match: { "questions.isHidden": false } },
-            {
-                $lookup: {
-                    from: "option",
-                    localField: "questions._id",
-                    foreignField: "questionId",
-                    as: "questions.options"
-                }
-            },
-            {
-                $group: {
-                    _id: "$_id",
-                    title: { $first: "$title" },
-                    content: { $first: "$content" },
-                    questions: { $push: "$questions" }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    title: 1,
-                    content: 1,
-                    questions: 1
-                }
-            }
-        ])
-
-        return res.status(200).send({
-            data: questions
-        });
+            ])
+    
+            return res.status(200).send({
+                data: questions
+            });
+        } catch (err: any) {
+            return res.status(400).send({
+                message: err.message
+            });
+        }
     },
 
     doAnswerQuizz: async (req: any, res: any, next: any) => {

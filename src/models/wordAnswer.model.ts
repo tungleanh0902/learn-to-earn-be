@@ -2,9 +2,8 @@ import mongoose from 'mongoose';
 mongoose.Promise = global.Promise;
 
 const wordAnswerSchema = new mongoose.Schema({
-    wordIds: {
+    wordIdsAnswer: {
         type: [mongoose.Types.ObjectId],
-        required: true,
     },
     topicId: {
         type: mongoose.Types.ObjectId,
@@ -16,7 +15,6 @@ const wordAnswerSchema = new mongoose.Schema({
     },
     point: {
         type: Number,
-        required: true
     }
 }, {
     timestamps: true
