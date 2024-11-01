@@ -6,7 +6,7 @@ WORKDIR /usr/app
 
 COPY package.json .
 
-RUN npm install --omit=dev --legacy-peer-deps --no-cache
+RUN npm install
 
 COPY . . 
 
