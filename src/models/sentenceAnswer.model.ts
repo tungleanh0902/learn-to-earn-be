@@ -3,7 +3,7 @@ mongoose.Promise = global.Promise;
 
 const sentenceAnswerSchema = new mongoose.Schema({
     content: {
-        type: String,
+        type: [String],
     },
     userId: {
         type: mongoose.Types.ObjectId,
