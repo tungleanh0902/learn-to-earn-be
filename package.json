@@ -16,6 +16,9 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@ton/crypto": "^3.3.0",
+    "@ton/ton": "^15.1.0",
+    "@tonconnect/protocol": "^2.2.6",
     "@types/body-parser": "^1.19.5",
     "@types/cors": "^2.8.17",
     "bcrypt": "^5.1.1",
@@ -26,7 +29,8 @@
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

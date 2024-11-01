@@ -15,11 +15,37 @@ export const onManageSentenceGame = {
 
             for (let index = 0; index < lessons.length; index++) {
                 await Sentence.create({
-                    content: lessons.content,
-                    points: lessons.point,
+                    content: lessons[index].content,
+                    points: lessons[index].points,
                     createdBy: _id
                 })
             }
+            return res.status(200).send({
+                data: "success"
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doChangeSentence: async (req: any, res: any, next: any) => {
+        try {
+            const sentenceId = req.body.sentenceId
+            const content = req.body.content
+            const points = req.body.points
+            const isHidden = req.body.isHidden
+
+            await Sentence.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(sentenceId)
+            }, {
+                content: content,
+                points,
+                isHidden
+            })
+
             return res.status(200).send({
                 data: "success"
             });
@@ -42,6 +68,7 @@ export const onManageSentenceGame = {
             }
 
             const sentences = await Sentence.aggregate([
+                { $match: { isHidden: false } },
                 { $sample: { size: 5 } },
             ])
 
@@ -61,6 +88,7 @@ export const onManageSentenceGame = {
                 data: {
                     challenge: sentences,
                     answerIds,
+                    // fix multiple sentence
                     sentenceId: sentences[0]._id
                 }
             });
@@ -84,14 +112,15 @@ export const onManageSentenceGame = {
             const contents = req.body.contents
             const anwserIds = req.body.anwserIds
             const sentenceIds = req.body.sentenceIds
-
+            
             let points = 0;
             for (let index = 0; index < anwserIds.length; index++) {
                 const anwserId = anwserIds[index];
                 let sentenceAnswer = await SentenceAnswer.findOne({ _id: new mongoose.Types.ObjectId(anwserId) })
-                if (sentenceAnswer.userId !== _id || sentenceAnswer.content != null) {
+                console.log(sentenceAnswer);
+                if (!sentenceAnswer || sentenceAnswer?.userId.toString() !== _id || sentenceAnswer?.content?.length > 0) {
                     return res.status(400).send({
-                        message: "answer unvailable"
+                        message: "Answer unvailable"
                     });
                 }
                 let sentence = await Sentence.findOne({ _id: new mongoose.Types.ObjectId(sentenceIds[index]) })
@@ -100,9 +129,9 @@ export const onManageSentenceGame = {
                 }
 
                 await SentenceAnswer.findOneAndUpdate({
-                    _id: new mongoose.Types.ObjectId(_id)
+                    _id: new mongoose.Types.ObjectId(anwserId)
                 }, {
-                    contents: contents[index]
+                    content: contents[index]
                 })
             }
 
@@ -114,9 +143,7 @@ export const onManageSentenceGame = {
             })
 
             return res.status(200).send({
-                data: {
-                    points,
-                }
+                data: points,
             });
         } catch (err: any) {
             console.log(err.message)
@@ -126,4 +153,3 @@ export const onManageSentenceGame = {
         }
     }
 }
-// replace git

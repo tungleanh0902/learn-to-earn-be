@@ -6,9 +6,13 @@ const wordSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    topicId: {
-        type: mongoose.Types.ObjectId,
+    topicIds: {
+        type: [mongoose.Types.ObjectId],
         required: true
+    },
+    isHidden: {
+        type: Boolean,
+        default: false
     },
     createdBy: {
         type: mongoose.Types.ObjectId,

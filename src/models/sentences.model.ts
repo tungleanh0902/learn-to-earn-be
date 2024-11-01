@@ -13,7 +13,11 @@ const sentenceSchema = new mongoose.Schema({
     points: {
         type: Number,
         required: true
-    }
+    },
+    isHidden: {
+        type: Boolean,
+        default: false
+    },
 }, {
     timestamps: true
 });

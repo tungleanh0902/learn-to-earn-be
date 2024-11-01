@@ -7,6 +7,10 @@ const topicSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    isHidden: {
+        type: Boolean,
+        default: false
+    },
     createdBy: {
         type: mongoose.Types.ObjectId,
         required: true
