@@ -1,27 +1,22 @@
 const User = require("../../models/users.model")
 import jwt from 'jsonwebtoken'
 import { ethers } from 'ethers';
+import {TonApiService} from "../../services/ton-api-service";
+import {TonProofService} from "../../services/ton-proof-service";
 require('dotenv').config()
 
 export async function login (req: any, res: any) {
     try {
-        // const signature = req.body.signature
-        // const message = req.body.message
         const address = req.body.address
-        // if (!signature || !message || !address) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: "Invalid input"
-        //     })
-        // }
-        // //validation on email and password
-        // const signerAddr = ethers.utils.verifyMessage(message, signature);
-        // if (signerAddr.toLocaleLowerCase() != address) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: "Invalid signature"
-        //     })
-        // }
+        const client = TonApiService.create(req.body.network);
+        const service = new TonProofService();
+
+        const isValid = await service.checkProof(req.body, (address) => client.getWalletPublicKey(address));
+        if (!isValid) {
+            return res.status(400).send({
+                message: "Invalid proof"
+            });
+        }
 
         //check for registered User
         let user = await User.findOne({ address })
