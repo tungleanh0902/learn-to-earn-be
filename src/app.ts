@@ -40,6 +40,13 @@ app.use("/api/user", manageUser);
 app.use("/api/word", manageWordGame);
 app.use("/api/socialTask", manageSocialTask);
 
+app.use("/api/ping", async (req: any, res: any, next: any)=>{
+  return res.status(200).send({
+    data: "hello"
+});
+});
+
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
