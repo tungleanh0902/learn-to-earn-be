@@ -56,7 +56,7 @@ pipeline {
                                 EOF"""
                                 sh """ssh -o StrictHostKeyChecking=no ansible@128.199.189.121 << EOF
                                     docker service scale l2e_web-api=2
-                                    docker service update --image registry.gitlab.com/eupsolution/l2e-api:${GIT_COMMIT} l2e_web-api
+                                    docker service update --image registry.gitlab.com/eupsolution/learn_to_earn_be:${GIT_COMMIT} l2e_web-api
                                     docker service scale l2e_web-api=1
                                 exit
                             EOF"""
