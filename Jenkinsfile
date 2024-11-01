@@ -9,7 +9,6 @@ pipeline {
                     } else if (env.GIT_BRANCH == 'origin/deployment/dev') {
                         target = 'develop'
                     } else {
-                        echo "other"
                     }
                 }
             }
