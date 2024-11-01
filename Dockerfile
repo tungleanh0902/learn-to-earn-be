@@ -16,9 +16,9 @@ FROM node:16-alpine AS run
 
 WORKDIR /usr/app
 
-COPY --from=build package*.json ./
-COPY --from=build ecosytem.config.js ./
-COPY --from=build dist ./dist
+COPY --from=build /usr/app/package*.json /usr/app
+COPY --from=build /usr/app/ecosystem.config.js /usr/app
+COPY --from=build /usr/app/dist /usr/app/dist
 
 RUN npm install --omit=dev --legacy-peer-deps --no-cache
 
