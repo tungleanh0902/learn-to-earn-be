@@ -20,7 +20,7 @@ COPY --from=build /usr/app/package*.json /usr/app
 COPY --from=build /usr/app/ecosystem.config.js /usr/app
 COPY --from=build /usr/app/dist /usr/app/dist
 
-RUN npm install --omit=dev --legacy-peer-deps --no-cache
+RUN npm install
 
 RUN npm cache clean --force
 
