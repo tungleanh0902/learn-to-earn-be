@@ -1,19 +1,31 @@
-FROM node:16-alpine
+FROM node:16-alpine AS build
+
+RUN mkdir -p /usr/app
 
 WORKDIR /usr/app
 
-# first copy just the package and the lock file, for caching purposes
-COPY package.json ./
-COPY yarn.lock ./
+COPY package.json .
 
-# install dependencies
-RUN yarn
+RUN npm install --omit=dev --legacy-peer-deps --no-cache
 
-# copy the entire project
-COPY . .
+COPY . . 
 
-# build
-RUN yarn build
+RUN npm run build
 
-EXPOSE 3000
-CMD [ "yarn", "start" ]
+FROM node:16-alpine AS run
+
+WORKDIR /usr/app
+
+COPY --from=build package*.json ./
+COPY --from=build ecosytem.config.js ./
+COPY --from=build dist ./dist
+
+RUN npm install --omit=dev --legacy-peer-deps --no-cache
+
+RUN npm cache clean --force
+
+RUN npm install -g pm2
+
+EXPOSE 8080
+
+CMD ["pm2-runtime", "start", "ecosystem.config.js"]
