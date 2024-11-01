@@ -28,9 +28,9 @@ pipeline {
                                     cd /home/builder/resource/l2e.eupsolution.net/web-api
                                     git checkout deployment/dev
                                     git pull origin deployment/dev
-                                    docker build -t registry.gitlab.com/eup/LearnToEarn_be:${GIT_COMMIT} .
-                                    docker push registry.gitlab.com/eup/LearnToEarn_be:${GIT_COMMIT}
-                                    docker rmi registry.gitlab.com/eup/LearnToEarn_be:${GIT_COMMIT}
+                                    docker build -t registry.gitlab.com/eup/learn_to_earn_be:${GIT_COMMIT} .
+                                    docker push registry.gitlab.com/eup/learn_to_earn_be:${GIT_COMMIT}
+                                    docker rmi registry.gitlab.com/eup/learn_to_earn_be:${GIT_COMMIT}
                                 exit
                             EOF"""
                         }
@@ -51,7 +51,7 @@ pipeline {
                                 sh """ssh -o StrictHostKeyChecking=no mazii@157.245.203.48 << EOF
                                     cd /home/mazii/resource/l2e.eupsolution.net/web-api
                                     git pull origin deployment/dev
-                                    docker pull registry.gitlab.com/eup/LearnToEarn_be:${GIT_COMMIT}
+                                    docker pull registry.gitlab.com/eup/learn_to_earn_be:${GIT_COMMIT}
                                     exit
                                 EOF"""
                                 sh """ssh -o StrictHostKeyChecking=no ansible@128.199.189.121 << EOF
