@@ -352,7 +352,8 @@ export const onManageLesson = {
                 let user = await User.findOne({ _id })
 
                 let tickets = 0;
-                if (await helperFunction.checkBoughtSeaconBadge(user._id) == true) {
+                let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeaconBadge(user._id)
+                if (checkBoughtSeaconBadge[0] == true) {
                     tickets += 1
                 } else {
                     // count document that this user answered today
