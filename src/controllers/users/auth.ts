@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { ethers } from 'ethers';
 import {TonApiService} from "../../services/ton-api-service";
 import {TonProofService} from "../../services/ton-proof-service";
+import { makeid } from '../../helper/helper';
 require('dotenv').config()
 
 export async function login (req: any, res: any) {
@@ -18,16 +19,15 @@ export async function login (req: any, res: any) {
             });
         }
 
-        //check for registered User
         let user = await User.findOne({ address })
 
         if (!user) {
-            // TODO: check nft onchain
             user = await User.create({
                 address,
                 points: 0,
                 tickets: 0,
-                role: "user"
+                role: "user",
+                refCode: makeid(10)
             })
         }
 

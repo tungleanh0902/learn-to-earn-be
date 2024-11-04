@@ -1,8 +1,11 @@
+import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE } from "../../config"
 import mongoose from "mongoose"
+import { Address } from "@ton/ton";
 
 const User = require('../../models/users.model')
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
 const SeasonBadge = require('../../models/seasonBadge.model')
+const TxOnchain = require('../../models/txOnchain.model')
 
 require('dotenv').config()
 
@@ -19,7 +22,7 @@ export const onManageSeasonBadge = {
             const nextItemIndex = req.body.nextItemIndex
             const address = req.body.address
             const explorerUrl = req.body.explorerUrl
-            
+
             await SeasonBadge.create({
                 title,
                 userId: _id,
@@ -53,8 +56,29 @@ export const onManageSeasonBadge = {
             const itemAddress = req.body.itemAddress
             const explorerUrl = req.body.explorerUrl
 
-            let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeaconBadge(_id)
-            if (checkBoughtSeaconBadge[0] == true) {
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            let badge = await SeasonBadge.findOne({
+                _id: new mongoose.Types.ObjectId(badgeId)
+            })
+            let txData = await tonQuery.get(tx)
+            let time = txData.data["utime"] * 1000
+            let txTime = new Date(time)
+            let now = new Date()
+            let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
+
+            if (MINT_NFT_OPCODE != txData.data["out_msgs"][0].op_code
+                || user.address != txData.data["out_msgs"][0].source.address
+                || Address.parse(badge.address).toRawString() != txData.data["out_msgs"][0].destination.address
+                || txData.data["success"] != true
+                || diffMins > 10
+            ) {
+                return res.status(400).send({
+                    message: "Invalid tx"
+                });
+            }
+
+            let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+            if (checkBoughtSeasonBadge[0] == true) {
                 return res.status(400).send({
                     message: "Already bought this season badge"
                 });
@@ -69,8 +93,11 @@ export const onManageSeasonBadge = {
                 explorerUrl
             })
 
-            let badge = await SeasonBadge.findOne({
-                _id: new mongoose.Types.ObjectId(badgeId)
+            await TxOnchain.create({
+                userId: _id,
+                tx,
+                action: "mint_nft",
+                amount: MINT_NFT_FEE
             })
 
             await SeasonBadge.findOneAndUpdate({
@@ -79,9 +106,8 @@ export const onManageSeasonBadge = {
                 nextItemIndex: badge.nextItemIndex + 1
             })
 
-            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(badgeId) })
             await User.findOneAndUpdate({
-                _id
+                _id: new mongoose.Types.ObjectId(_id)
             }, {
                 multiplier: user.multiplier + 1
             })
@@ -96,20 +122,20 @@ export const onManageSeasonBadge = {
             });
         }
     },
-    
+
     doCheckBoughtSeasonBadge: async (req: any, res: any, next: any) => {
         try {
             const _id = req.user.id
-            let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeaconBadge(_id)
-            if (checkBoughtSeaconBadge[0] == false) {
+            let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+            if (checkBoughtSeasonBadge[0] == false) {
                 return res.status(200).send({
                     data: {
                         itemAddress: null,
                         tokenId: null
                     }
-                }) 
+                })
             }
-            let seasonBadge = checkBoughtSeaconBadge[1]
+            let seasonBadge = checkBoughtSeasonBadge[1]
             let userBadge = SeasonBadgeTx.findOne({
                 badgeId: seasonBadge._id,
                 userId: new mongoose.Types.ObjectId(_id)
@@ -119,7 +145,7 @@ export const onManageSeasonBadge = {
                     itemAddress: userBadge.itemAddress,
                     tokenId: userBadge.tokenId
                 }
-            }) 
+            })
         } catch (err: any) {
             console.log(err.message)
             return res.status(200).send({
@@ -149,16 +175,16 @@ export const helperFunction = {
     getCurrentBadge: async () => {
         const startOfToday = new Date();
         let badge = await SeasonBadge.find({
-            "seasonBegin" : {$lt: startOfToday},
-            "seasonEnd" : {$gt: startOfToday},
+            "seasonBegin": { $lt: startOfToday },
+            "seasonEnd": { $gt: startOfToday },
         })
         return badge[0]
     },
-    
-    checkBoughtSeaconBadge: async(userId: string) => {
+
+    checkBoughtSeasonBadge: async (userId: string) => {
         let seasonBadgeTx = await SeasonBadgeTx.findOne({ userId: new mongoose.Types.ObjectId(userId) }).sort({ createdAt: -1 })
         let seasonBadge = await helperFunction.getCurrentBadge()
-    
+
         let hasThisSeasonBadge = false
         if (seasonBadgeTx && seasonBadgeTx.createdAt < seasonBadge.seasonEnd && seasonBadgeTx.createdAt > seasonBadge.seasonBegin) {
             hasThisSeasonBadge = true

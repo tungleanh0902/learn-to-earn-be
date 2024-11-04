@@ -10,6 +10,14 @@ const quizzAnswerSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required: true
     },
+    isCampaign: {
+        type: Boolean,
+        default: false
+    },
+    isAddition: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });

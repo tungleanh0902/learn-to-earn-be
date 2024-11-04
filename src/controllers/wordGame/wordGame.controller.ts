@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import { shuffle } from "./../../helper/helper"
+import { updatePointForRefUser } from "../../controllers/users/user.controller"
 
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
@@ -206,9 +207,9 @@ export const onManageWordGame = {
                 convertObjectId.push(convertedWordId)
                 let word = await Words.findOne({ _id: convertedWordId })
                 if (word.topicIds.includes(new mongoose.Types.ObjectId(topicId))) {
-                    points--;
+                    points+=10;
                 } else {
-                    points++;
+                    points-=10;
                 }
             }
             if (points < 0) {
@@ -221,6 +222,10 @@ export const onManageWordGame = {
                 points: user.points + points * user.multiplier,
                 tickets: user.tickets - 1,
             })
+
+            if (user.refUser != null) {
+                await updatePointForRefUser(user.refUser.toString(), points * user.multiplier)
+            }
 
             await WordAnswer.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(anwserId)
