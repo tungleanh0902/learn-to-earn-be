@@ -1,3 +1,4 @@
+import { updatePointForRefUser } from "../../controllers/users/user.controller"
 import mongoose from "mongoose"
 
 const SocialTask = require('../../models/socialTask.model')
@@ -86,6 +87,10 @@ export const onManageSocialTask = {
                 }, {
                     points: user.points + task.points * user.multiplier,
                 })
+
+                if (user.refUser != null) {
+                    await updatePointForRefUser(user.refUser.toString(), task.points * user.multiplier)
+                }
                 
                 await SocialTaskDone.create({
                     taskId: new mongoose.Types.ObjectId(taskId),

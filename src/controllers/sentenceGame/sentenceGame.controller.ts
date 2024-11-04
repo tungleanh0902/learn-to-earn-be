@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import { shuffle } from "./../../helper/helper"
+import { updatePointForRefUser } from "../../controllers/users/user.controller"
 
 const Sentence = require('../../models/sentences.model')
 const SentenceAnswer = require('../../models/sentenceAnswer.model')
@@ -117,7 +118,6 @@ export const onManageSentenceGame = {
             for (let index = 0; index < anwserIds.length; index++) {
                 const anwserId = anwserIds[index];
                 let sentenceAnswer = await SentenceAnswer.findOne({ _id: new mongoose.Types.ObjectId(anwserId) })
-                console.log(sentenceAnswer);
                 if (!sentenceAnswer || sentenceAnswer?.userId.toString() !== _id || sentenceAnswer?.content?.length > 0) {
                     return res.status(400).send({
                         message: "Answer unvailable"
@@ -125,7 +125,7 @@ export const onManageSentenceGame = {
                 }
                 let sentence = await Sentence.findOne({ _id: new mongoose.Types.ObjectId(sentenceIds[index]) })
                 if (sentence.content.join() === contents[index].join()) {
-                    points++;
+                    points += sentenceAnswer.points;
                 }
 
                 await SentenceAnswer.findOneAndUpdate({
@@ -141,6 +141,10 @@ export const onManageSentenceGame = {
                 points: user.points + points * user.multiplier,
                 tickets: user.tickets - 1,
             })
+
+            if (user.refUser != null) {
+                await updatePointForRefUser(user.refUser.toString(), points)
+            }
 
             return res.status(200).send({
                 data: points,

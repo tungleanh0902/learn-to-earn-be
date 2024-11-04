@@ -17,6 +17,10 @@ const lessonSchema = new mongoose.Schema({
     isHidden: {
         type: Boolean,
         default: false
+    },
+    isCampaign: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

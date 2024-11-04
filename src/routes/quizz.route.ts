@@ -25,3 +25,7 @@ manageQuizz.get("/questions", validate.auth, validate.isAdmin, onManageLesson.do
 manageQuizz.get("/random_lesson", validate.auth, onManageLesson.doGetRandomLesson);
 
 manageQuizz.post("/answer", validate.auth, onManageLesson.doAnswerQuizz);
+
+manageQuizz.get("/random_lesson_for_campaign", validate.auth, onManageLesson.doGetRandomLessonForCampaign);
+
+manageQuizz.post("/answer_campaign", validate.auth, onManageLesson.doAnswerQuizzCampaign);

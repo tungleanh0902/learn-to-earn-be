@@ -19,6 +19,25 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 1
     },
+    streak: {
+        type: Number,
+        default: 1
+    },
+    refCode: {
+        type: String,
+        required: true,
+    },
+    refUser: {
+        type: mongoose.Types.ObjectId
+    },
+    hasStreakSaver: {
+        type: Boolean,
+        default: false,
+    },
+    moreQuizz: {
+        type: Number,
+        default: 0
+    },
     role: { type: String, enum: ['user', 'admin'], default: 'user' }
 }, {
     timestamps: true

@@ -1,5 +1,7 @@
 import mongoose from "mongoose"
 import { helperFunction } from "./../seasonBadge/seasonBadge.controller"
+import { SHARE_REF } from "../../config"
+import { updatePointForRefUser } from "../users/user.controller"
 
 const Lesson = require('../../models/lessons.model')
 const Question = require('../../models/questions.model')
@@ -19,7 +21,8 @@ export const onManageLesson = {
                 let lesson = await Lesson.create({
                     title: lessons[lIdx].title,
                     content: lessons[lIdx].content,
-                    createdBy: _id
+                    createdBy: _id,
+                    isCampaign: lessons[lIdx].isCampaign
                 })
                 for (let qIdx = 0; qIdx < lessons[lIdx].questions.length; qIdx++) {
                     await saveQuestions(lessons[lIdx].questions[qIdx], req.user.id, lesson._id)
@@ -42,12 +45,14 @@ export const onManageLesson = {
             const lessonId = req.body.lessonId
             const content = req.body.content
             const title = req.body.title
+            const isCampaign = req.body.isCampaign
 
             await Lesson.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(lessonId)
             }, {
                 title,
                 content,
+                isCampaign
             })
 
             return res.status(200).send({
@@ -257,15 +262,7 @@ export const onManageLesson = {
     doGetRandomLesson: async (req: any, res: any, next: any) => {
         try {
             const _id = req.user.id
-            const startOfToday = new Date();
-            startOfToday.setHours(0, 0, 0, 0);
-            let answers = await QuizzAnswer.countDocuments({
-                createdAt: {
-                    $gte: startOfToday
-                },
-                userId: new mongoose.Types.ObjectId(_id)
-            })
-
+            let answers = await checkAnswersDaily(_id)
             if (answers == 25) {
                 return res.status(400).send({
                     message: "Out of limit today"
@@ -273,7 +270,7 @@ export const onManageLesson = {
             }
 
             const lessons = await Lesson.aggregate([
-                { $match: { isHidden: false } },
+                { $match: { isHidden: false, isCampaign: false } },
                 { $sample: { size: 1 } },
                 {
                     '$lookup': {
@@ -337,6 +334,13 @@ export const onManageLesson = {
             const optionId = req.body.optionId
             const _id = req.user.id
 
+            let answers = await checkAnswersDaily(_id)
+            if (answers == 25) {
+                return res.status(400).send({
+                    message: "Out of limit today"
+                });
+            }
+
             let option = await Option.findOne({
                 _id: new mongoose.Types.ObjectId(optionId)
             })
@@ -344,15 +348,15 @@ export const onManageLesson = {
             let question = await Question.findOne({
                 _id: new mongoose.Types.ObjectId(option.questionId)
             })
-            
+
             const startOfToday = new Date();
             let newPonts = 0
             // multiplier + 0.1 khi diem danh
             if (option.isCorrect == true) {
-                let user = await User.findOne({ _id })
+                let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
                 let tickets = 0;
-                let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeaconBadge(user._id)
+                let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(user._id)
                 if (checkBoughtSeaconBadge[0] == true) {
                     tickets += 1
                 } else {
@@ -369,11 +373,15 @@ export const onManageLesson = {
                 }
                 newPonts = question.points * user.multiplier
                 await User.findOneAndUpdate({
-                    _id
+                    _id: new mongoose.Types.ObjectId(_id)
                 }, {
                     points: user.points + newPonts,
                     tickets,
                 })
+
+                if (user.refUser != null) {
+                    await updatePointForRefUser(user.refUser.toString(), newPonts)
+                }
             }
 
             await QuizzAnswer.create({
@@ -390,7 +398,206 @@ export const onManageLesson = {
                 message: err.message
             });
         }
-    }
+    },
+
+    doAnswerAdditionQuizz: async (req: any, res: any, next: any) => {
+        try {
+            const optionId = req.body.optionId
+            const _id = req.user.id
+
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            if (user.moreQuizz == 0) {
+                return res.status(400).send({
+                    message: "Out of additional quizz"
+                });
+            }
+
+            let option = await Option.findOne({
+                _id: new mongoose.Types.ObjectId(optionId)
+            })
+
+            let question = await Question.findOne({
+                _id: new mongoose.Types.ObjectId(option.questionId)
+            })
+
+            let newPonts = 0
+            if (option.isCorrect == true) {
+                newPonts = question.points * user.multiplier
+                await User.findOneAndUpdate({
+                    _id: new mongoose.Types.ObjectId(_id)
+                }, {
+                    points: user.points + newPonts,
+                    tickets: user.tickets + 1,
+                    moreQuizz: user.moreQuizz - 1
+                })
+
+                if (user.refUser != null) {
+                    await updatePointForRefUser(user.refUser.toString(), newPonts)
+                }
+            }
+
+            await QuizzAnswer.create({
+                optionId,
+                userId: _id,
+                isAddition: true
+            })
+
+            return res.status(200).send({
+                data: newPonts
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetRandomLessonForCampaign: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+            if (checkBoughtSeaconBadge[0] == false) {
+                return res.status(400).send({
+                    message: "Only for badge holder"
+                }); 
+            }
+            let answers = await checkAnswersCampaignWeekly(_id)
+            if (answers == 10) {
+                return res.status(400).send({
+                    message: "Out of limit this week"
+                });
+            }
+
+            const lessons = await Lesson.aggregate([
+                { $match: { isHidden: false, isCampaign: true } },
+                { $sample: { size: 1 } },
+                {
+                    '$lookup': {
+                        from: "questions",
+                        let: { lessonId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: ["$lessonId", "$$lessonId"]
+                                    }
+                                }
+                            },
+                            {
+                                $sample: { size: 10 - answers }
+                            }
+                        ],
+                        as: "questions"
+                    }
+                },
+                { $unwind: "$questions" },
+                { $match: { "questions.isHidden": false } },
+                {
+                    $lookup: {
+                        from: "options",
+                        localField: "questions._id",
+                        foreignField: "questionId",
+                        as: "questions.options"
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$_id",
+                        title: { $first: "$title" },
+                        content: { $first: "$content" },
+                        questions: { $push: "$questions" }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        title: 1,
+                        content: 1,
+                        questions: 1
+                    }
+                }
+            ])
+
+            return res.status(200).send({
+                data: lessons
+            });
+        } catch (err: any) {
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doAnswerQuizzCampaign: async (req: any, res: any, next: any) => {
+        try {
+            const optionId = req.body.optionId
+            const _id = req.user.id
+
+            let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+            if (checkBoughtSeaconBadge[0] == false) {
+                return res.status(400).send({
+                    message: "Only for badge holder"
+                }); 
+            }
+            let answers = await checkAnswersCampaignWeekly(_id)
+            if (answers == 10) {
+                return res.status(400).send({
+                    message: "Out of limit this week"
+                });
+            }
+
+            let option = await Option.findOne({
+                _id: new mongoose.Types.ObjectId(optionId)
+            })
+
+            let question = await Question.findOne({
+                _id: new mongoose.Types.ObjectId(option.questionId)
+            })
+
+            let lesson = await Question.findOne({
+                _id: new mongoose.Types.ObjectId(question.lessonId)
+            })
+
+            if (lesson.isCampaign == false) {
+                return res.status(400).send({
+                    message: "Invalid quizz"
+                });
+            } 
+
+            let newPonts = 0
+            // multiplier + 0.1 khi diem danh
+            if (option.isCorrect == true) {
+                let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
+                newPonts = question.points * user.multiplier
+                await User.findOneAndUpdate({
+                    _id: new mongoose.Types.ObjectId(_id)
+                }, {
+                    points: user.points + newPonts,
+                })
+
+                if (user.refUser != null) {
+                    await updatePointForRefUser(user.refUser.toString(), newPonts)
+                }
+            }
+
+            await QuizzAnswer.create({
+                optionId,
+                userId: _id,
+                isCampaign: true
+            })
+
+            return res.status(200).send({
+                data: newPonts
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
 }
 
 async function saveQuestions(questionInput: { content: any; isCorrect: any; options: any, points: number }, userId: any, lessonId: any) {
@@ -412,4 +619,41 @@ async function saveQuestions(questionInput: { content: any; isCorrect: any; opti
         })
     }
     return question
+}
+
+async function checkAnswersDaily(userId: string) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    let answers = await QuizzAnswer.countDocuments({
+        isCampaign: false,
+        createdAt: {
+            $gte: startOfToday
+        },
+        userId: new mongoose.Types.ObjectId(userId)
+    })
+    return answers
+}
+
+async function checkAnswersCampaignWeekly(userId: string) {
+    let d = new Date();
+    let day = d.getDay()
+    let diff = d.getDate() - day + (day == 0 ? -6 : 1); // adjust when day is sunday
+    d.setDate(diff)
+    let startOfWeek = new Date(d.setHours(0, 0, 0, 0));
+    let answers = await QuizzAnswer.countDocuments({
+        isCampaign: true,
+        createdAt: {
+            $gte: startOfWeek
+        },
+        userId: new mongoose.Types.ObjectId(userId)
+    })
+    return answers
+}
+
+async function checkMoreQuizz(userId: string) {
+    let answers = await QuizzAnswer.countDocuments({
+        isAddition: true,
+        userId: new mongoose.Types.ObjectId(userId)
+    })
+    return answers
 }

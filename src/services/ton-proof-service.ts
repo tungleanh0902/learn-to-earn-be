@@ -26,9 +26,7 @@ export class TonProofService {
    * https://github.com/ton-blockchain/ton-connect/blob/main/requests-responses.md#address-proof-signature-ton_proof
    */
   public async checkProof(payload: any, getWalletPublicKey: (address: string) => Promise<Buffer | null>): Promise<boolean> {
-    console.log(payload);
     try {
-      console.log(typeof(payload.proof.state_init));
       const stateInit = loadStateInit(Cell.fromBase64(payload.proof.state_init).beginParse());
       
       // 1. First, try to obtain public key via get_public_key get-method on smart contract deployed at Address.
