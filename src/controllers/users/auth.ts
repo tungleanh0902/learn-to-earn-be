@@ -9,15 +9,15 @@ require('dotenv').config()
 export async function login (req: any, res: any) {
     try {
         const address = req.body.address
-        const client = TonApiService.create(req.body.network);
-        const service = new TonProofService();
+        // const client = TonApiService.create(req.body.network);
+        // const service = new TonProofService();
 
-        const isValid = await service.checkProof(req.body, (address) => client.getWalletPublicKey(address));
-        if (!isValid) {
-            return res.status(400).send({
-                message: "Invalid proof"
-            });
-        }
+        // const isValid = await service.checkProof(req.body, (address) => client.getWalletPublicKey(address));
+        // if (!isValid) {
+        //     return res.status(400).send({
+        //         message: "Invalid proof"
+        //     });
+        // }
 
         let user = await User.findOne({ address })
 
