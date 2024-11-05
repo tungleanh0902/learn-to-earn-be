@@ -20,3 +20,5 @@ manageUser.get("/doRef", validate.auth, onManageUser.doRef)
 manageUser.get("/user_info", validate.auth, onManageUser.doGetUserInfo);
 
 manageUser.get("/leaderboard", onManageUser.doGetLeaderboard);
+
+manageUser.post("/grant", validate.auth, onManageUser.doGrantAdmin)
