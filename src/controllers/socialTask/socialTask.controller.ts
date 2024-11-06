@@ -21,7 +21,7 @@ export const onManageSocialTask = {
                 await SocialTask.create({
                     link: task.link,
                     title: task.title,
-                    content: task.content,
+                    platform: task.platform,
                     points: task.point,
                     createdBy: _id,
                     tag: task.tag
@@ -43,7 +43,7 @@ export const onManageSocialTask = {
             const taskId = req.body.taskId
             const link = req.body.link
             const title = req.body.title
-            const content = req.body.content
+            const platform = req.body.platform
             const point = req.body.point
             const hidden = req.body.hidden
             const tag = req.body.tag
@@ -53,7 +53,7 @@ export const onManageSocialTask = {
             }, {
                 link,
                 title,
-                content,
+                platform,
                 point,
                 hidden,
                 tag
@@ -160,7 +160,7 @@ export const onManageSocialTask = {
                     $project: {
                         link: 1,
                         title: 1,
-                        content: 1,
+                        platform: 1,
                         point: 1,
                         isDone: 1,
                         tag: 1
