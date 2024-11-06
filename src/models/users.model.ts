@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     refUser: {
         type: mongoose.Types.ObjectId
     },
+    refCount: {
+        type: Number,
+        default: 0
+    },
     hasStreakSaver: {
         type: Boolean,
         default: false,

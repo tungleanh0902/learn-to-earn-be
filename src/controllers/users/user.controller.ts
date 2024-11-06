@@ -87,10 +87,14 @@ export const onManageUser = {
                 })
 
                 checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(refUser._id.toString())
+                let otherUser = await User.findOne({
+                    _id: new mongoose.Types.ObjectId(refUser._id.toString())
+                })
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(refUser._id.toString())
                 }, {
                     points: checkBoughtSeasonBadge[0] ? user.points + 200 : user.points + 100,
+                    refCount: otherUser.refCount + 1
                 })
                 return res.status(200).send({
                     data: "success"
