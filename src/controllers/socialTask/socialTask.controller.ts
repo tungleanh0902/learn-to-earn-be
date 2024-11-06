@@ -23,7 +23,8 @@ export const onManageSocialTask = {
                     title: task.title,
                     content: task.content,
                     points: task.point,
-                    createdBy: _id
+                    createdBy: _id,
+                    tag: task.tag
                 })
             }
             return res.status(200).send({
@@ -45,6 +46,7 @@ export const onManageSocialTask = {
             const content = req.body.content
             const point = req.body.point
             const hidden = req.body.hidden
+            const tag = req.body.tag
 
             await SocialTask.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(taskId)
@@ -53,7 +55,8 @@ export const onManageSocialTask = {
                 title,
                 content,
                 point,
-                hidden
+                hidden,
+                tag
             })
 
             return res.status(200).send({
@@ -159,7 +162,8 @@ export const onManageSocialTask = {
                         title: 1,
                         content: 1,
                         point: 1,
-                        isDone: 1
+                        isDone: 1,
+                        tag: 1
                     }
                 }
             ]);

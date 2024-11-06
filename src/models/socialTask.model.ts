@@ -25,7 +25,11 @@ const socialTaskSchema = new mongoose.Schema({
     hidden: {
         type: Boolean,
         default: false
-    }
+    },
+    tag: { 
+        type: String, 
+        enum: ['onchain', 'academy', 'social'],
+    },
 }, {
     timestamps: true
 });
