@@ -4,6 +4,10 @@ mongoose.Promise = global.Promise;
 const userSchema = new mongoose.Schema({
     address: {
         type: String,
+        unique: true
+    },
+    telegramUserId: {
+        type: String,
         required: true,
         unique: true
     },

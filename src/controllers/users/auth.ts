@@ -1,29 +1,18 @@
 const User = require("../../models/users.model")
 import jwt from 'jsonwebtoken'
 import { ethers } from 'ethers';
-import {TonApiService} from "../../services/ton-api-service";
-import {TonProofService} from "../../services/ton-proof-service";
 import { makeid } from '../../helper/helper';
 require('dotenv').config()
 
 export async function login (req: any, res: any) {
     try {
-        const address = req.body.address
-        // const client = TonApiService.create(req.body.network);
-        // const service = new TonProofService();
+        const telegramUserId = req.body.telegramUserId
 
-        // const isValid = await service.checkProof(req.body, (address) => client.getWalletPublicKey(address));
-        // if (!isValid) {
-        //     return res.status(400).send({
-        //         message: "Invalid proof"
-        //     });
-        // }
-
-        let user = await User.findOne({ address })
+        let user = await User.findOne({ telegramUserId })
 
         if (!user) {
             user = await User.create({
-                address,
+                telegramUserId,
                 points: 0,
                 tickets: 0,
                 role: "user",

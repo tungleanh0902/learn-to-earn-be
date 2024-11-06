@@ -2,6 +2,8 @@ import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF } from "../../config"
 import { Address } from "@ton/ton";
+import {TonApiService} from "../../services/ton-api-service";
+import {TonProofService} from "../../services/ton-proof-service";
 
 const User = require('../../models/users.model')
 const TxOnchain = require('../../models/txOnchain.model')
@@ -95,6 +97,35 @@ export const onManageUser = {
                 });
             }
 
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doConnectWallet: async (req: any, res: any) => {
+        try {
+            const _id = req.user.id
+            const client = TonApiService.create(req.body.network);
+            const service = new TonProofService();
+    
+            const isValid = await service.checkProof(req.body, (address) => client.getWalletPublicKey(address));
+            if (!isValid) {
+                return res.status(400).send({
+                    message: "Invalid proof"
+                });
+            }
+    
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                address: req.body.address,
+            })
+            return res.status(200).send({
+                message: "Success"
+            });
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({
@@ -219,22 +250,6 @@ export const onManageUser = {
                 amount: MORE_QUIZZ_FEE
             })
 
-        } catch (err: any) {
-            console.log(err.message)
-            return res.status(400).send({
-                message: err.message
-            });
-        }
-    },
-
-    doGetUserInfo: async (req: any, res: any, next: any) => {
-        try {
-            const _id = req.user.id
-            let user = await User.findOne({ _id })
-
-            return res.status(200).send({
-                data: user
-            });
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({
