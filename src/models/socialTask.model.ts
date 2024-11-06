@@ -10,7 +10,7 @@ const socialTaskSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    content: {
+    platform: {
         type: String,
         required: true,
     },

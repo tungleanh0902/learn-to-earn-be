@@ -12,4 +12,4 @@ manageSocialTask.post("/claim", validate.auth, onManageSocialTask.doClaimSocialT
 
 manageSocialTask.get("/all", validate.auth, validate.isAdmin, onManageSocialTask.doGetAllTasks);
 
-manageSocialTask.get("/all_active", validate.auth, onManageSocialTask.doGetAllActiveTasks);
+manageSocialTask.post("/all_active", validate.auth, onManageSocialTask.doGetAllActiveTasks);
