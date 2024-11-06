@@ -19,4 +19,6 @@ manageUser.get("/doRef", validate.auth, onManageUser.doRef)
 
 manageUser.get("/leaderboard", onManageUser.doGetLeaderboard);
 
+manageUser.post("/connect_wallet", validate.auth, onManageUser.doConnectWallet);
+
 manageUser.post("/grant", validate.auth, onManageUser.doGrantAdmin)
