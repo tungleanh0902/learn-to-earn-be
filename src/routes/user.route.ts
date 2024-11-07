@@ -11,13 +11,13 @@ manageUser.post("/daily", validate.auth, onManageUser.doDailyAttendance);
 
 manageUser.post("/save_streak", validate.auth, onManageUser.doSaveStreak);
 
-manageUser.get("/check_daily", validate.auth, onManageUser.doCheckDailyAttendance);
+manageUser.post("/check_daily", validate.auth, onManageUser.doCheckDailyAttendance);
 
-manageUser.get("/check_yesterday", validate.auth, onManageUser.doCheckYesterdayCheckin);
+manageUser.post("/check_yesterday", validate.auth, onManageUser.doCheckYesterdayCheckin);
 
-manageUser.get("/doRef", validate.auth, onManageUser.doRef)
+manageUser.post("/doRef", validate.auth, onManageUser.doRef)
 
-manageUser.get("/leaderboard", onManageUser.doGetLeaderboard);
+manageUser.post("/leaderboard", onManageUser.doGetLeaderboard);
 
 manageUser.post("/connect_wallet", validate.auth, onManageUser.doConnectWallet);
 

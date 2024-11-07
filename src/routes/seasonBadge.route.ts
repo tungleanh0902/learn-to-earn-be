@@ -8,6 +8,6 @@ manageBadge.post("/", validate.auth, validate.isAdmin, onManageSeasonBadge.doPub
 
 manageBadge.post("/buy_nft", validate.auth, onManageSeasonBadge.doBuyNft);
 
-manageBadge.get("/check_badge", validate.auth, onManageSeasonBadge.doCheckBoughtSeasonBadge);
+manageBadge.post("/check_badge", validate.auth, onManageSeasonBadge.doCheckBoughtSeasonBadge);
 
-manageBadge.get("/current_badge", onManageSeasonBadge.doGetCurrentBadge);
+manageBadge.post("/current_badge", onManageSeasonBadge.doGetCurrentBadge);

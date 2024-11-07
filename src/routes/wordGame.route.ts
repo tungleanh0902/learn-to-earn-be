@@ -12,6 +12,6 @@ manageWordGame.post("/word", validate.auth, validate.isAdmin, onManageWordGame.d
 
 manageWordGame.post("/change_word", validate.auth, validate.isAdmin, onManageWordGame.doChangeWord);
 
-manageWordGame.get("/get_game", validate.auth, onManageWordGame.getChallenge);
+manageWordGame.post("/get_game", validate.auth, onManageWordGame.getChallenge);
 
 manageWordGame.post("/answer", validate.auth, onManageWordGame.doAnswer);
