@@ -18,14 +18,14 @@ manageQuizz.post("/remove_lesson", validate.auth, validate.isAdmin, onManageLess
 
 manageQuizz.post("/remove_question", validate.auth, validate.isAdmin, onManageLesson.doRemoveQuestion);
 
-manageQuizz.get("/", validate.auth, validate.isAdmin, onManageLesson.doGetAllLessons);
+manageQuizz.post("/", validate.auth, validate.isAdmin, onManageLesson.doGetAllLessons);
 
-manageQuizz.get("/questions", validate.auth, validate.isAdmin, onManageLesson.doGetQuestionsinLesson);
+manageQuizz.post("/questions", validate.auth, validate.isAdmin, onManageLesson.doGetQuestionsinLesson);
 
-manageQuizz.get("/random_lesson", validate.auth, onManageLesson.doGetRandomLesson);
+manageQuizz.post("/random_lesson", validate.auth, onManageLesson.doGetRandomLesson);
 
 manageQuizz.post("/answer", validate.auth, onManageLesson.doAnswerQuizz);
 
-manageQuizz.get("/random_lesson_for_campaign", validate.auth, onManageLesson.doGetRandomLessonForCampaign);
+manageQuizz.post("/random_lesson_for_campaign", validate.auth, onManageLesson.doGetRandomLessonForCampaign);
 
 manageQuizz.post("/answer_campaign", validate.auth, onManageLesson.doAnswerQuizzCampaign);

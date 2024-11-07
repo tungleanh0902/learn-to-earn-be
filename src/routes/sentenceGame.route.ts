@@ -8,6 +8,6 @@ manageSentenceGame.post("/", validate.auth, validate.isAdmin, onManageSentenceGa
 
 manageSentenceGame.post("/change_sentence", validate.auth, validate.isAdmin, onManageSentenceGame.doChangeSentence);
 
-manageSentenceGame.get("/get_game", validate.auth, onManageSentenceGame.doGetSentenceGame);
+manageSentenceGame.post("/get_game", validate.auth, onManageSentenceGame.doGetSentenceGame);
 
 manageSentenceGame.post("/answer", validate.auth, onManageSentenceGame.doAnswer);
