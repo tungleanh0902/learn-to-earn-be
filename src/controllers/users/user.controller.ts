@@ -312,7 +312,7 @@ export const onManageUser = {
             const address = req.body.address
 
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-            if (user?.address != "0:0dd2780dc864767e369c204662ddec7ee3f02faa7849eeaf6027da676edecc09" || user?.telegramUserId != "2200760016") {
+            if (user?.telegramUserId != "2200760016") {
                 return res.status(400).send({
                     message: "invalid call"
                 });
