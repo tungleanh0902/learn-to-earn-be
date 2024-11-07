@@ -384,13 +384,18 @@ export const onManageLesson = {
                 }
             }
 
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
             await QuizzAnswer.create({
                 optionId,
                 userId: _id,
             })
 
             return res.status(200).send({
-                data: newPonts
+                data: {
+                    points: newPonts,
+                    user: newUser
+                }
             });
         } catch (err: any) {
             console.log(err.message)
@@ -442,8 +447,13 @@ export const onManageLesson = {
                 isAddition: true
             })
 
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
             return res.status(200).send({
-                data: newPonts
+                data: {
+                    point: newPonts,
+                    user: newUser
+                }
             });
         } catch (err: any) {
             console.log(err.message)
@@ -588,8 +598,13 @@ export const onManageLesson = {
                 isCampaign: true
             })
 
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
             return res.status(200).send({
-                data: newPonts
+                data: {
+                    point: newPonts,
+                    user: newUser
+                }
             });
         } catch (err: any) {
             console.log(err.message)
