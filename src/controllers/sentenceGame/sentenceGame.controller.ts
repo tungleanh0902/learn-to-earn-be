@@ -146,8 +146,13 @@ export const onManageSentenceGame = {
                 await updatePointForRefUser(user.refUser.toString(), points)
             }
 
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
             return res.status(200).send({
-                data: points,
+                data: {
+                    point: points * user.multiplier,
+                    user: newUser
+                }
             });
         } catch (err: any) {
             console.log(err.message)

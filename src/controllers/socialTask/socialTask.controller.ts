@@ -102,8 +102,13 @@ export const onManageSocialTask = {
                     userId: new mongoose.Types.ObjectId(_id)
                 })
 
+                let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
                 return res.status(200).send({
-                    data: task.points * user.multiplier
+                    data: {
+                        points: task.points * user.multiplier,
+                        user: newUser
+                    }
                 });
             } else {
                 return res.status(400).send({

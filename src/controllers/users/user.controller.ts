@@ -44,8 +44,13 @@ export const onManageUser = {
                     await updatePointForRefUser(user.refUser.toString(), bonusPoint * user.multiplier)
                 }
 
+                let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
                 return res.status(200).send({
-                    data: "success"
+                    data: {
+                        point: bonusPoint * user.multiplier,
+                        user: newUser
+                    }
                 });
             } else {
                 return res.status(400).send({
@@ -78,10 +83,11 @@ export const onManageUser = {
                 });
             } else {
                 let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+                let points = checkBoughtSeasonBadge[0] ? 200 : 100
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
                 }, {
-                    points: checkBoughtSeasonBadge[0] ? user.points + 200 : user.points + 100,
+                    points: user.points + points * user.multiplier,
                 })
 
                 checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(refUser._id.toString())
@@ -91,11 +97,16 @@ export const onManageUser = {
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(refUser._id.toString())
                 }, {
-                    points: checkBoughtSeasonBadge[0] ? user.points + 200 : user.points + 100,
+                    points: otherUser.points + points * otherUser.multiplier,
                     refCount: otherUser.refCount + 1
                 })
+                let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
                 return res.status(200).send({
-                    data: "success"
+                    data: {
+                        points: points * user.multiplier,
+                        user: newUser
+                    }
                 });
             }
 
