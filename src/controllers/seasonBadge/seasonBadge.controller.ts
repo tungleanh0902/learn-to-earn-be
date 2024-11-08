@@ -1,6 +1,7 @@
 import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE } from "../../config"
 import mongoose from "mongoose"
 import { Address } from "@ton/ton";
+import { parseBoc } from "../../helper/helper";
 
 const User = require('../../models/users.model')
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
@@ -52,15 +53,23 @@ export const onManageSeasonBadge = {
             const badgeId = req.body.badgeId
             const _id = req.user.id
             const tokenId = req.body.tokenId
-            const tx = req.body.tx
-            const itemAddress = req.body.itemAddress
-            const explorerUrl = req.body.explorerUrl
+            const boc = req.body.boc
+            const network = req.body.network
+            const sender = req.body.sender
 
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             let badge = await SeasonBadge.findOne({
                 _id: new mongoose.Types.ObjectId(badgeId)
             })
-            let txData = await tonQuery.get(tx)
+
+            let tx = await parseBoc(boc, network, sender)
+            if (tx == null) {
+                return res.status(400).send({
+                    message: "Invalid boc"
+                });
+            }
+
+            let txData = await tonQuery.get(tx ?? "")
             let time = txData.data["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
@@ -89,8 +98,6 @@ export const onManageSeasonBadge = {
                 userId: _id,
                 tokenId,
                 tx,
-                itemAddress,
-                explorerUrl
             })
 
             await TxOnchain.create({
