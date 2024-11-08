@@ -35,7 +35,7 @@ app.use(function(req, res, next) {
 
 app.use("/api/quizz", manageQuizz);
 app.use("/api/badge", manageBadge);
-// app.use("/api/sentence", manageSentenceGame);
+app.use("/api/sentence", manageSentenceGame);
 app.use("/api/user", manageUser);
 app.use("/api/word", manageWordGame);
 app.use("/api/social_task", manageSocialTask);

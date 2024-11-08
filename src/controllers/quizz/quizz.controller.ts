@@ -263,7 +263,7 @@ export const onManageLesson = {
         try {
             const _id = req.user.id
             let answers = await checkAnswersDaily(_id)
-            if (answers == 25) {
+            if (answers == 100) {
                 return res.status(400).send({
                     message: "Out of limit today"
                 });
@@ -285,7 +285,7 @@ export const onManageLesson = {
                                 }
                             },
                             {
-                                $sample: { size: 25 - answers }
+                                $sample: { size: 100 - answers }
                             }
                         ],
                         as: "questions"
@@ -354,20 +354,21 @@ export const onManageLesson = {
             // multiplier + 0.1 khi diem danh
             if (option.isCorrect == true) {
                 let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-
                 let tickets = 0;
                 let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(user._id)
+                // count document that this user answered today
+                startOfToday.setHours(0, 0, 0, 0);
+                let answers = await QuizzAnswer.countDocuments({
+                    createdAt: {
+                        $gte: startOfToday
+                    }
+                })
                 if (checkBoughtSeaconBadge[0] == true) {
-                    tickets += 1
+                    if (answers < 25) {
+                        tickets += 1
+                    }
                 } else {
-                    // count document that this user answered today
-                    startOfToday.setHours(0, 0, 0, 0);
-                    let answers = await QuizzAnswer.countDocuments({
-                        createdAt: {
-                            $gte: startOfToday
-                        }
-                    })
-                    if (answers <= 8) {
+                    if (answers < 8) {
                         tickets += 1
                     }
                 }

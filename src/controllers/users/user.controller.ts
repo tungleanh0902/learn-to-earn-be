@@ -22,9 +22,9 @@ export const onManageUser = {
                 let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
                 let bonusPoint = 0
                 if (yesterdayCheckin == true || user.hasStreakSaver == true) {
-                    bonusPoint = 0.1 * user.streak + 10
+                    bonusPoint = 0.1 * user.streak + 1000
                 } else {
-                    bonusPoint = 10
+                    bonusPoint = 1000
                 }
 
                 let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
