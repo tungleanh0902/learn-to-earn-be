@@ -34,10 +34,6 @@ const seasonBadgeSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    explorerUrl: {
-        type: String,
-        required: true
-    }
 }, {
     timestamps: true
 });

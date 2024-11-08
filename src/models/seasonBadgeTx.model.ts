@@ -18,10 +18,6 @@ const seasonBadgeTxSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    itemAddress: {
-        type: String,
-        required: true
-    },
     explorerUrl: {
         type: String,
         required: true

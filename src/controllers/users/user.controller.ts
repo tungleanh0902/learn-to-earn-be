@@ -2,6 +2,7 @@ import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF } from "../../config"
 import { Address } from "@ton/ton";
+import { parseBoc } from "../../helper/helper";
 
 const User = require('../../models/users.model')
 const TxOnchain = require('../../models/txOnchain.model')
@@ -174,9 +175,19 @@ export const onManageUser = {
 
     doSaveStreak: async (req: any, res: any, next: any) => {
         try {
-            const tx = req.body.tx
+            const boc = req.body.boc
             const _id = req.user.id
-            let txData = await tonQuery.get(tx)
+            const network = req.body.network
+            const sender = req.body.sender
+            
+            let tx = await parseBoc(boc, network, sender)
+            if (tx == null) {
+                return res.status(400).send({
+                    message: "Invalid boc"
+                });
+            }
+
+            let txData = await tonQuery.get(tx ?? "")
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
          
             let time = txData.data["utime"] * 1000
@@ -219,9 +230,19 @@ export const onManageUser = {
 
     doBuyMoreQuizz: async (req: any, res: any, next: any) => {
         try {
-            const tx = req.body.tx
             const _id = req.user.id
-            let txData = await tonQuery.get(tx)
+            const boc = req.body.boc
+            const network = req.body.network
+            const sender = req.body.sender
+            
+            let tx = await parseBoc(boc, network, sender)
+            if (tx == null) {
+                return res.status(400).send({
+                    message: "Invalid boc"
+                });
+            }
+
+            let txData = await tonQuery.get(tx ?? "")
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
          
             let time = txData.data["utime"] * 1000
