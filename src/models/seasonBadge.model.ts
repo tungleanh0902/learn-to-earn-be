@@ -7,11 +7,11 @@ const seasonBadgeSchema = new mongoose.Schema({
         required: true
     },
     seasonBegin: {
-        type: Number,
+        type: Date,
         required: true
     },
     seasonEnd: {
-        type: Number,
+        type: Date,
         required: true
     },
     metadata: {
