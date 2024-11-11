@@ -158,11 +158,11 @@ export const onManageUser = {
             const _id = req.user.id
             if (await checkDailyAttendance(_id) == false) {
                 return res.status(200).send({
-                    data: "false"
+                    data: false
                 });
             } else {
                 return res.status(200).send({
-                    data: "true"
+                    data: true
                 });
             }
         } catch (err: any) {
