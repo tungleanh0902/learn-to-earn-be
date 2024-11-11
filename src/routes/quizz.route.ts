@@ -26,6 +26,8 @@ manageQuizz.post("/random_lesson", validate.auth, onManageLesson.doGetRandomLess
 
 manageQuizz.post("/answer", validate.auth, onManageLesson.doAnswerQuizz);
 
+manageQuizz.post("/answer_special_quizz", validate.auth, onManageLesson.doAnswerAdditionQuizz);
+
 manageQuizz.post("/random_lesson_for_campaign", validate.auth, onManageLesson.doGetRandomLessonForCampaign);
 
 manageQuizz.post("/answer_campaign", validate.auth, onManageLesson.doAnswerQuizzCampaign);
