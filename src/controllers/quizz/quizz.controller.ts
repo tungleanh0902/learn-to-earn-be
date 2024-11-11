@@ -263,10 +263,19 @@ export const onManageLesson = {
         try {
             const _id = req.user.id
             let answers = await checkAnswersDaily(_id)
-            if (answers == 100) {
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
+            if (user.moreQuizz == 0 && answers == 100) {
                 return res.status(400).send({
                     message: "Out of limit today"
                 });
+            }
+
+            let answer = 0
+            if (user.moreQuizz > 0) {
+                answer = user.moreQuizz
+            } else if (answers < 100) {
+                answer = 100 - answers
             }
 
             const lessons = await Lesson.aggregate([
@@ -285,7 +294,7 @@ export const onManageLesson = {
                                 }
                             },
                             {
-                                $sample: { size: 100 - answers }
+                                $sample: { size: answer }
                             }
                         ],
                         as: "questions"
@@ -428,7 +437,7 @@ export const onManageLesson = {
 
             let newPonts = 0
             if (option.isCorrect == true) {
-                newPonts = question.points * user.multiplier
+                newPonts = question.points * user.multiplier * 5
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
                 }, {
