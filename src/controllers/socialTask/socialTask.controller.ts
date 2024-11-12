@@ -85,7 +85,7 @@ export const onManageSocialTask = {
             })
             
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-            
+          
             if (taskDone == null) {
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)

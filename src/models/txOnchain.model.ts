@@ -5,6 +5,7 @@ const txOnchainSchema = new mongoose.Schema({
     tx: {
         type: String,
         required: true,
+        unique: true
     },
     action: { 
         type: String, 

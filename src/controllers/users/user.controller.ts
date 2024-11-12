@@ -1,8 +1,10 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF } from "../../config"
-import { Address } from "@ton/ton";
+import { Address, beginCell, toNano, TonClient } from "@ton/ton";
 import { parseBoc } from "../../helper/helper";
+import { getHttpEndpoint, Network } from "@orbs-network/ton-access";
+require('dotenv').config()
 
 const User = require('../../models/users.model')
 const TxOnchain = require('../../models/txOnchain.model')
@@ -99,7 +101,8 @@ export const onManageUser = {
                     _id: new mongoose.Types.ObjectId(refUser._id.toString())
                 }, {
                     points: otherUser.points + points * otherUser.multiplier,
-                    refCount: otherUser.refCount + 1
+                    refCount: otherUser.refCount + 1,
+                    refUser: new mongoose.Types.ObjectId(ref)
                 })
                 let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
@@ -196,7 +199,7 @@ export const onManageUser = {
             let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
             let ownerAddress = Address.parse(OWNER_ADDRESS).toRawString()
 
-            if (SAVE_STREAK_FEE != txData.data["out_msgs"][0].value
+            if (SAVE_STREAK_FEE != txData.data["out_msgs"][0].value.toString()
                 || user.address != txData.data["out_msgs"][0].source.address
                 || ownerAddress != txData.data["out_msgs"][0].destination.address
                 || txData.data["success"] != true
@@ -219,6 +222,13 @@ export const onManageUser = {
                 action: "transfer",
                 amount: SAVE_STREAK_FEE
             })
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            return res.status(200).send({
+                data: {
+                    user: newUser
+                }
+            });
 
         } catch (err: any) {
             console.log(err.message)
@@ -251,7 +261,7 @@ export const onManageUser = {
             let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
             let ownerAddress = Address.parse(OWNER_ADDRESS).toRawString()
 
-            if (MORE_QUIZZ_FEE != txData.data["out_msgs"][0].value
+            if (MORE_QUIZZ_FEE != txData.data["out_msgs"][0].value.toString()
                 || user.address != txData.data["out_msgs"][0].source.address
                 || ownerAddress != txData.data["out_msgs"][0].destination.address
                 || txData.data["success"] != true
@@ -274,6 +284,13 @@ export const onManageUser = {
                 action: "transfer",
                 amount: MORE_QUIZZ_FEE
             })
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            return res.status(200).send({
+                data: {
+                    user: newUser
+                }
+            });
 
         } catch (err: any) {
             console.log(err.message)
@@ -317,6 +334,44 @@ export const onManageUser = {
                 data: {
                     leaderboard: users,
                     currentRank: userRank
+                }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetMintBodyData: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user._id
+            const refUserId = req.body.refUserId // ref user
+
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) }) 
+            let userAddress = Address.parseRaw(process.env.OWNER_ADDRESS || "")
+            if (refUserId != null) {
+                let refUserFrom = await User.findOne({ _id: new mongoose.Types.ObjectId(refUserId) })
+                userAddress = Address.parse(refUserFrom.address)
+            }
+            const nftItemContent = beginCell();
+            nftItemContent.storeAddress(Address.parseRaw(user.address));
+
+            const uriContent = beginCell();
+            uriContent.storeBuffer(Buffer.from("/nft.json"));
+            nftItemContent.storeRef(uriContent.endCell());
+            let body = beginCell()
+                .storeUint(1, 32)
+                .storeUint(Date.now(), 64)
+                .storeUint(1, 64)
+                .storeCoins(toNano('0.05'))
+                .storeRef(nftItemContent)
+                .storeAddress(userAddress)
+                .endCell()
+            return res.status(200).send({
+                data: {
+                    body_data: body.toBoc().toString("base64")
                 }
             });
         } catch (err: any) {
@@ -404,4 +459,35 @@ export async function updatePointForRefUser(_id: string, newPonts: number) {
     }, {
         points: refUser.points + (newPonts * SHARE_REF)/100,
     })
+}
+
+export async function getNftAddress(network: string, collectionAddress: Address, itemIndex: number) {
+    const endpoint = await getHttpEndpoint({
+        network: network as Network,
+    });
+    const client = new TonClient({ endpoint });
+    let response = await client.runMethod(
+        collectionAddress,
+        "get_nft_address_by_index",
+        [{ type: "int", value: BigInt(itemIndex) }]
+    );
+    return response.stack.readAddress();
+}
+
+export async function getNftOwner(network: string, address: Address) {
+    const endpoint = await getHttpEndpoint({
+        network: network as Network,
+    });
+    const client = new TonClient({ endpoint });
+
+    const response = await client.runMethod(
+        address,
+        "get_nft_data",
+        []
+    );
+    let index = response.stack.readBigNumber()
+    let _ = response.stack.readAddress()
+    let itemOwner = response.stack.readAddress()
+    let itemContent = response.stack.readCell()
+    return itemOwner
 }
