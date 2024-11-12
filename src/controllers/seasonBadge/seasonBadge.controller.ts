@@ -2,6 +2,7 @@ import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE } from "../../config"
 import mongoose from "mongoose"
 import { Address } from "@ton/ton";
 import { parseBoc } from "../../helper/helper";
+import { getNftAddress } from "../users/user.controller";
 
 const User = require('../../models/users.model')
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
@@ -93,11 +94,13 @@ export const onManageSeasonBadge = {
                 });
             }
 
+            let nftAddress = await getNftAddress(process.env.NETWORK || "", Address.parse(badge.address), tokenId)
             await SeasonBadgeTx.create({
                 badgeId,
                 userId: _id,
                 tokenId,
                 tx,
+                nftAddress
             })
 
             await TxOnchain.create({
@@ -119,8 +122,11 @@ export const onManageSeasonBadge = {
                 multiplier: user.multiplier + 1
             })
 
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             return res.status(200).send({
-                data: "success"
+                data: {
+                    user: newUser
+                }
             });
         } catch (err: any) {
             console.log(err.message)
@@ -181,11 +187,11 @@ export const onManageSeasonBadge = {
 export const helperFunction = {
     getCurrentBadge: async () => {
         const startOfToday = new Date();
-        let badge = await SeasonBadge.find({
+        let badge = await SeasonBadge.findOne({
             "seasonBegin": { $lt: startOfToday },
             "seasonEnd": { $gt: startOfToday },
         })
-        return badge[0]
+        return badge
     },
 
     checkBoughtSeasonBadge: async (userId: string) => {

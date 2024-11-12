@@ -24,3 +24,5 @@ manageUser.post("/connect_wallet", validate.auth, onManageUser.doConnectWallet);
 manageUser.post("/grant", validate.auth, onManageUser.doGrantAdmin)
 
 manageUser.post("/buy_more_quizz", validate.auth, onManageUser.doBuyMoreQuizz)
+
+manageUser.post("/mint_body_data", validate.auth, onManageUser.doGetMintBodyData)
