@@ -265,7 +265,7 @@ export const onManageLesson = {
             let answers = await checkAnswersDaily(_id)
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
-            if (user.moreQuizz == 0 && answers == 100) {
+            if (user.moreQuizz == 0 && answers >= 100) {
                 return res.status(400).send({
                     message: "Out of limit today"
                 });
@@ -344,7 +344,7 @@ export const onManageLesson = {
             const _id = req.user.id
 
             let answers = await checkAnswersDaily(_id)
-            if (answers == 25) {
+            if (answers >= 25) {
                 return res.status(400).send({
                     message: "Out of limit today"
                 });
@@ -553,7 +553,7 @@ export const onManageLesson = {
         try {
             const optionId = req.body.optionId
             const _id = req.user.id
-
+            
             let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(_id)
             if (checkBoughtSeaconBadge[0] == false) {
                 return res.status(400).send({
@@ -570,16 +570,15 @@ export const onManageLesson = {
             let option = await Option.findOne({
                 _id: new mongoose.Types.ObjectId(optionId)
             })
-
             let question = await Question.findOne({
                 _id: new mongoose.Types.ObjectId(option.questionId)
             })
 
-            let lesson = await Question.findOne({
-                _id: new mongoose.Types.ObjectId(question.lessonId)
+            let lesson = await Lesson.findOne({
+                _id: new mongoose.Types.ObjectId(question.lessonId.toString())
             })
 
-            if (lesson.isCampaign == false) {
+            if (lesson?.isCampaign == false) {
                 return res.status(400).send({
                     message: "Invalid quizz"
                 });
@@ -601,6 +600,7 @@ export const onManageLesson = {
                     await updatePointForRefUser(user.refUser.toString(), newPonts)
                 }
             }
+            console.log("check");
 
             await QuizzAnswer.create({
                 optionId,
