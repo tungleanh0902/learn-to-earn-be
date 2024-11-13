@@ -1,6 +1,6 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
-import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF } from "../../config"
+import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE } from "../../config"
 import { Address, beginCell, Cell, toNano, TonClient } from "@ton/ton";
 import { getTxData } from "../../helper/helper";
 require('dotenv').config()
@@ -369,13 +369,14 @@ export const onManageUser = {
             nftItemContent.storeAddress(Address.parse(user.address));
 
             const uriContent = beginCell();
-            uriContent.storeBuffer(Buffer.from("/nft.json"));
+            uriContent.storeBuffer(Buffer.from("https://shorturl.at/LBsGq"));
             nftItemContent.storeRef(uriContent.endCell());
+            let coins = MINT_NFT_FEE + STORE_FEE
             let body = beginCell()
                 .storeUint(1, 32)
                 .storeUint(Date.now(), 64)
-                .storeUint(Number(tokenId), 64)
-                .storeCoins(toNano('0.05'))
+                .storeUint(tokenId, 64)
+                .storeCoins(coins)
                 .storeRef(nftItemContent)
                 .storeAddress(userAddress)
                 .endCell()
