@@ -24,7 +24,7 @@ export const onManageUser = {
                 let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
                 let bonusPoint = 0
                 if (yesterdayCheckin == true || user.hasStreakSaver == true) {
-                    bonusPoint = 0.1 * user.streak + 1000
+                    bonusPoint = user.streak * 1000
                 } else {
                     bonusPoint = 1000
                 }
@@ -125,7 +125,13 @@ export const onManageUser = {
     doConnectWallet: async (req: any, res: any) => {
         try {
             const _id = req.user.id
-    
+            let user = await User.findOne({ address: req.body.address })
+            if (user != null) {
+                return res.status(400).send({
+                    message: "This wallet is already connected"
+                });
+            }
+
             await User.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(_id)
             }, {
