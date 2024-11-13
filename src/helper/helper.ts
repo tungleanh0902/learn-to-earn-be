@@ -92,8 +92,13 @@ export async function getTxData(options: any): Promise<AxiosResponse | null> {
         const interval = setInterval(async () => {
             refetches += 1;
             console.log("waiting transaction...");
-            let txData = await tonQuery.get(hash ?? "")
-            if (txData.data["success"] != null) {
+            let txData
+            try {
+                txData = await tonQuery.get(hash ?? "")
+            } catch (error) {
+            }
+            if (txData?.data["success"] != null) {
+                clearInterval(interval);
                 resolve(txData)
             }
             if (refetchLimit && refetches >= refetchLimit) {
