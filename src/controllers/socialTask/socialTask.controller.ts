@@ -1,7 +1,5 @@
 import { updatePointForRefUser } from "../../controllers/users/user.controller"
 import mongoose from "mongoose"
-import {TonApiService} from "../../services/ton-api-service";
-import {TonProofService} from "../../services/ton-proof-service";
 
 const SocialTask = require('../../models/socialTask.model')
 const SocialTaskDone = require('../../models/socialTaskDone.model')

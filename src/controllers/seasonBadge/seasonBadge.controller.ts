@@ -1,7 +1,7 @@
 import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE } from "../../config"
 import mongoose from "mongoose"
-import { Address } from "@ton/ton";
-import { parseBoc } from "../../helper/helper";
+import { Address, Cell } from "@ton/ton";
+import { getTxData } from "../../helper/helper";
 import { getNftAddress } from "../users/user.controller";
 
 const User = require('../../models/users.model')
@@ -55,27 +55,25 @@ export const onManageSeasonBadge = {
             const _id = req.user.id
             const tokenId = req.body.tokenId
             const boc = req.body.boc
-            const network = req.body.network
-            const sender = req.body.sender
 
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             let badge = await SeasonBadge.findOne({
                 _id: new mongoose.Types.ObjectId(badgeId)
             })
-
-            let tx = await parseBoc(boc, network, sender)
-            if (tx == null) {
+            let tx = Cell.fromBase64(boc).hash().toString("base64")
+            let txData = await getTxData({
+                hash: tx,
+                refetchLimit: 60
+            })
+            if (txData == null) {
                 return res.status(400).send({
                     message: "Invalid boc"
                 });
             }
-
-            let txData = await tonQuery.get(tx ?? "")
             let time = txData.data["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
             let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
-
             if (MINT_NFT_OPCODE != txData.data["out_msgs"][0].op_code
                 || user.address != txData.data["out_msgs"][0].source.address
                 || Address.parse(badge.address).toRawString() != txData.data["out_msgs"][0].destination.address
@@ -149,13 +147,13 @@ export const onManageSeasonBadge = {
                 })
             }
             let seasonBadge = checkBoughtSeasonBadge[1]
-            let userBadge = SeasonBadgeTx.findOne({
+            let userBadge = await SeasonBadgeTx.findOne({
                 badgeId: seasonBadge._id,
                 userId: new mongoose.Types.ObjectId(_id)
             })
             return res.status(200).send({
                 data: {
-                    itemAddress: userBadge.itemAddress,
+                    itemAddress: userBadge.nftAddress,
                     tokenId: userBadge.tokenId
                 }
             })
