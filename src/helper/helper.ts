@@ -1,5 +1,7 @@
 import { TonClient, Address, beginCell, Cell, loadMessage, storeMessage, Transaction } from "@ton/ton";
 import { getHttpEndpoint, Network } from "@orbs-network/ton-access";
+import { tonQuery } from "../config";
+import { AxiosResponse } from "axios";
 
 export function shuffle(array: []) {
     let currentIndex = array.length;
@@ -83,21 +85,21 @@ const waitForTransaction = async (
     });
 };
 
-export async function parseBoc(boc: string, network: string, sender: string) {
-    const endpoint = await getHttpEndpoint({
-        network: network as Network,
+export async function getTxData(options: any): Promise<AxiosResponse | null> {
+    const { hash, refetchInterval = 1000, refetchLimit } = options;
+    return new Promise((resolve) => {
+        let refetches = 0;
+        const interval = setInterval(async () => {
+            refetches += 1;
+            console.log("waiting transaction...");
+            let txData = await tonQuery.get(hash ?? "")
+            if (txData.data["success"] != null) {
+                resolve(txData)
+            }
+            if (refetchLimit && refetches >= refetchLimit) {
+                clearInterval(interval);
+                resolve(null);
+            }
+        }, refetchInterval);
     });
-    const client = new TonClient({ endpoint });
-    const hash = Cell.fromBase64(boc)
-        .hash()
-        .toString("base64");
-
-    const txHash = await waitForTransaction(
-        {
-            address: sender,
-            hash: hash,
-        },
-        client
-    );
-    return txHash
 }

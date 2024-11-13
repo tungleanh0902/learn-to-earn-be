@@ -1,9 +1,8 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF } from "../../config"
-import { Address, beginCell, toNano, TonClient } from "@ton/ton";
-import { parseBoc } from "../../helper/helper";
-import { getHttpEndpoint, Network } from "@orbs-network/ton-access";
+import { Address, beginCell, Cell, toNano, TonClient } from "@ton/ton";
+import { getTxData } from "../../helper/helper";
 require('dotenv').config()
 
 const User = require('../../models/users.model')
@@ -94,6 +93,7 @@ export const onManageUser = {
                 })
 
                 checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(refUser._id.toString())
+                points = checkBoughtSeasonBadge[0] ? 200 : 100
                 let otherUser = await User.findOne({
                     _id: new mongoose.Types.ObjectId(refUser._id.toString())
                 })
@@ -180,17 +180,17 @@ export const onManageUser = {
         try {
             const boc = req.body.boc
             const _id = req.user.id
-            const network = req.body.network
-            const sender = req.body.sender
             
-            let tx = await parseBoc(boc, network, sender)
-            if (tx == null) {
+            let tx = Cell.fromBase64(boc).hash().toString("base64")
+            let txData = await getTxData({
+                hash: tx,
+                refetchLimit: 60
+            })
+            if (txData == null) {
                 return res.status(400).send({
                     message: "Invalid boc"
                 });
             }
-
-            let txData = await tonQuery.get(tx ?? "")
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
          
             let time = txData.data["utime"] * 1000
@@ -242,17 +242,17 @@ export const onManageUser = {
         try {
             const _id = req.user.id
             const boc = req.body.boc
-            const network = req.body.network
-            const sender = req.body.sender
             
-            let tx = await parseBoc(boc, network, sender)
-            if (tx == null) {
+            let tx = Cell.fromBase64(boc).hash().toString("base64")
+            let txData = await getTxData({
+                hash: tx,
+                refetchLimit: 60
+            })
+            if (txData == null) {
                 return res.status(400).send({
                     message: "Invalid boc"
                 });
             }
-
-            let txData = await tonQuery.get(tx ?? "")
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
          
             let time = txData.data["utime"] * 1000
@@ -346,17 +346,27 @@ export const onManageUser = {
 
     doGetMintBodyData: async (req: any, res: any, next: any) => {
         try {
-            const _id = req.user._id
+            const _id = req.user.id
             const refUserId = req.body.refUserId // ref user
+            const tokenId = req.body.tokenId
 
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) }) 
-            let userAddress = Address.parseRaw(process.env.OWNER_ADDRESS || "")
+            let userAddress = Address.parse(process.env.OWNER_ADDRESS || "")
             if (refUserId != null) {
                 let refUserFrom = await User.findOne({ _id: new mongoose.Types.ObjectId(refUserId) })
-                userAddress = Address.parse(refUserFrom.address)
+                if (refUserFrom.address == null) {
+                    userAddress = Address.parse(process.env.OWNER_ADDRESS || "")
+                } else {
+                    userAddress = Address.parse(refUserFrom.address)
+                }
             }
             const nftItemContent = beginCell();
-            nftItemContent.storeAddress(Address.parseRaw(user.address));
+            if (user.address == null) {
+                return res.status(400).send({
+                    message: "Please link your account with your wallet"
+                });
+            }
+            nftItemContent.storeAddress(Address.parse(user.address));
 
             const uriContent = beginCell();
             uriContent.storeBuffer(Buffer.from("/nft.json"));
@@ -364,7 +374,7 @@ export const onManageUser = {
             let body = beginCell()
                 .storeUint(1, 32)
                 .storeUint(Date.now(), 64)
-                .storeUint(1, 64)
+                .storeUint(Number(tokenId), 64)
                 .storeCoins(toNano('0.05'))
                 .storeRef(nftItemContent)
                 .storeAddress(userAddress)
@@ -462,10 +472,10 @@ export async function updatePointForRefUser(_id: string, newPonts: number) {
 }
 
 export async function getNftAddress(network: string, collectionAddress: Address, itemIndex: number) {
-    const endpoint = await getHttpEndpoint({
-        network: network as Network,
+    const client = new TonClient({ 
+        endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+        apiKey: process.env.API_KEY
     });
-    const client = new TonClient({ endpoint });
     let response = await client.runMethod(
         collectionAddress,
         "get_nft_address_by_index",
@@ -475,10 +485,10 @@ export async function getNftAddress(network: string, collectionAddress: Address,
 }
 
 export async function getNftOwner(network: string, address: Address) {
-    const endpoint = await getHttpEndpoint({
-        network: network as Network,
+    const client = new TonClient({ 
+        endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+        apiKey: process.env.API_KEY
     });
-    const client = new TonClient({ endpoint });
 
     const response = await client.runMethod(
         address,
