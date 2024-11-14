@@ -92,7 +92,7 @@ export const onManageSeasonBadge = {
                 });
             }
 
-            let nftAddress = await getNftAddress(process.env.NETWORK || "", Address.parse(badge.address), tokenId)
+            let nftAddress = await getNftAddress(Address.parse(badge.address), tokenId)
             await SeasonBadgeTx.create({
                 badgeId,
                 userId: _id,
