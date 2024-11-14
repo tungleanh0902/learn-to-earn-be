@@ -1,6 +1,5 @@
 import mongoose from "mongoose"
 import { helperFunction } from "./../seasonBadge/seasonBadge.controller"
-import { SHARE_REF } from "../../config"
 import { updatePointForRefUser } from "../users/user.controller"
 
 const Lesson = require('../../models/lessons.model')
@@ -607,7 +606,6 @@ export const onManageLesson = {
                     await updatePointForRefUser(user.refUser.toString(), newPonts)
                 }
             }
-            console.log("check");
 
             await QuizzAnswer.create({
                 optionId,

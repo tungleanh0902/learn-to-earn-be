@@ -1,6 +1,6 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
-import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE } from "../../config"
+import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
 import { Address, beginCell, Cell, toNano, TonClient } from "@ton/ton";
 import { getTxData } from "../../helper/helper";
 require('dotenv').config()
@@ -357,11 +357,11 @@ export const onManageUser = {
             const tokenId = req.body.tokenId
 
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) }) 
-            let userAddress = Address.parse(process.env.OWNER_ADDRESS || "")
+            let userAddress = Address.parse(OWNER_ADDRESS)
             if (refUserId != null) {
                 let refUserFrom = await User.findOne({ _id: new mongoose.Types.ObjectId(refUserId) })
                 if (refUserFrom.address == null) {
-                    userAddress = Address.parse(process.env.OWNER_ADDRESS || "")
+                    userAddress = Address.parse(OWNER_ADDRESS)
                 } else {
                     userAddress = Address.parse(refUserFrom.address)
                 }
@@ -478,9 +478,9 @@ export async function updatePointForRefUser(_id: string, newPonts: number) {
     })
 }
 
-export async function getNftAddress(network: string, collectionAddress: Address, itemIndex: number) {
+export async function getNftAddress(collectionAddress: Address, itemIndex: number) {
     const client = new TonClient({ 
-        endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+        endpoint: TON_CENTER_RPC,
         apiKey: process.env.API_KEY
     });
     let response = await client.runMethod(
@@ -489,22 +489,4 @@ export async function getNftAddress(network: string, collectionAddress: Address,
         [{ type: "int", value: BigInt(itemIndex) }]
     );
     return response.stack.readAddress();
-}
-
-export async function getNftOwner(network: string, address: Address) {
-    const client = new TonClient({ 
-        endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
-        apiKey: process.env.API_KEY
-    });
-
-    const response = await client.runMethod(
-        address,
-        "get_nft_data",
-        []
-    );
-    let index = response.stack.readBigNumber()
-    let _ = response.stack.readAddress()
-    let itemOwner = response.stack.readAddress()
-    let itemContent = response.stack.readCell()
-    return itemOwner
 }
