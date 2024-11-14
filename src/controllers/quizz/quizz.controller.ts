@@ -449,6 +449,13 @@ export const onManageLesson = {
                 if (user.refUser != null) {
                     await updatePointForRefUser(user.refUser.toString(), newPonts)
                 }
+            } else {
+                await User.findOneAndUpdate({
+                    _id: new mongoose.Types.ObjectId(_id)
+                }, {
+                    tickets: user.tickets + 1,
+                    moreQuizz: user.moreQuizz - 1
+                })
             }
 
             await QuizzAnswer.create({
