@@ -20,18 +20,6 @@ export function shuffle(array: []) {
     return array
 }
 
-export function makeid(length: number) {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const charactersLength = characters.length;
-    let counter = 0;
-    while (counter < length) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-        counter += 1;
-    }
-    return result;
-}
-
 export async function getTxData(options: any): Promise<AxiosResponse | null> {
     const { hash, refetchInterval = 1000, refetchLimit } = options;
     return new Promise((resolve) => {
