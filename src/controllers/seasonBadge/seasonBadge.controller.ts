@@ -153,8 +153,8 @@ export const onManageSeasonBadge = {
             })
             return res.status(200).send({
                 data: {
-                    itemAddress: userBadge.nftAddress,
-                    tokenId: userBadge.tokenId
+                    itemAddress: userBadge?.nftAddress,
+                    tokenId: userBadge?.tokenId
                 }
             })
         } catch (err: any) {

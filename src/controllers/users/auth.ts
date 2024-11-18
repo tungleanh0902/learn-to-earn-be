@@ -1,7 +1,5 @@
 const User = require("../../models/users.model")
 import jwt from 'jsonwebtoken'
-import { ethers } from 'ethers';
-import { makeid } from '../../helper/helper';
 require('dotenv').config()
 
 export async function login (req: any, res: any) {
@@ -16,7 +14,7 @@ export async function login (req: any, res: any) {
                 points: 0,
                 tickets: 0,
                 role: "user",
-                refCode: makeid(10)
+                refCode: telegramUserId
             })
         }
 
