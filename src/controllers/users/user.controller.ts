@@ -79,30 +79,35 @@ export const onManageUser = {
             let user = await User.findOne({
                 _id: new mongoose.Types.ObjectId(_id)
             })
-            if (user.refCode != null) {
+
+            if (ref == user.telegramUserId) {
+                return res.status(400).send({
+                    message: "Cannot self referal"
+                });
+            }
+
+            if (user.refUser != null) {
                 return res.status(400).send({
                     message: "Already have referal"
                 });
             } else {
                 let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
-                let points = checkBoughtSeasonBadge[0] ? 200 : 100
+                let points = checkBoughtSeasonBadge[0] ? 2000 : 1000
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
                 }, {
                     points: user.points + points * user.multiplier,
+                    refUser: refUser._id
                 })
 
                 checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(refUser._id.toString())
-                points = checkBoughtSeasonBadge[0] ? 200 : 100
-                let otherUser = await User.findOne({
-                    _id: new mongoose.Types.ObjectId(refUser._id.toString())
-                })
+                points = checkBoughtSeasonBadge[0] ? 2000 : 1000
+
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(refUser._id.toString())
                 }, {
-                    points: otherUser.points + points * otherUser.multiplier,
-                    refCount: otherUser.refCount + 1,
-                    refUser: new mongoose.Types.ObjectId(ref)
+                    points: refUser.points + points * refUser.multiplier,
+                    refCount: refUser.refCount + 1,
                 })
                 let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
@@ -360,7 +365,8 @@ export const onManageUser = {
             let userAddress = Address.parse(OWNER_ADDRESS)
             if (refUserId != null) {
                 let refUserFrom = await User.findOne({ _id: new mongoose.Types.ObjectId(refUserId) })
-                if (refUserFrom.address == null) {
+                console.log(refUserFrom.address);
+                if (refUserFrom.address == null || refUserFrom.address == "") {
                     userAddress = Address.parse(OWNER_ADDRESS)
                 } else {
                     userAddress = Address.parse(refUserFrom.address)
