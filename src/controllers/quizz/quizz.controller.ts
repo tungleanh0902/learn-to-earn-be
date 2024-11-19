@@ -467,7 +467,7 @@ export const onManageLesson = {
 
             return res.status(200).send({
                 data: {
-                    point: newPonts,
+                    points: newPonts,
                     user: newUser
                 }
             });
@@ -617,7 +617,7 @@ export const onManageLesson = {
 
             return res.status(200).send({
                 data: {
-                    point: newPonts,
+                    points: newPonts,
                     user: newUser
                 }
             });

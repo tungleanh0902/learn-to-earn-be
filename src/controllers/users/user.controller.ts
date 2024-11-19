@@ -48,7 +48,7 @@ export const onManageUser = {
 
                 return res.status(200).send({
                     data: {
-                        point: bonusPoint * user.multiplier,
+                        points: bonusPoint * user.multiplier,
                         user: newUser
                     }
                 });
