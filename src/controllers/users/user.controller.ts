@@ -3,8 +3,9 @@ import mongoose from "mongoose"
 import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
 import { Address, beginCell, Cell, toNano, TonClient } from "@ton/ton";
 import { getTxData } from "../../helper/helper";
-require('dotenv').config()
 
+const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
+const SeasonBadge = require('../../models/seasonBadge.model')
 const User = require('../../models/users.model')
 const TxOnchain = require('../../models/txOnchain.model')
 const DailyAttendence = require('../../models/dailyAttendance.model')
@@ -29,10 +30,7 @@ export const onManageUser = {
                     bonusPoint = 1000
                 }
 
-                let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
-                if (checkBoughtSeasonBadge[0]) {
-                    bonusPoint = 2 * bonusPoint
-                }
+                bonusPoint = user.multiplier * bonusPoint
 
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
@@ -50,7 +48,7 @@ export const onManageUser = {
 
                 return res.status(200).send({
                     data: {
-                        point: bonusPoint * user.multiplier,
+                        points: bonusPoint * user.multiplier,
                         user: newUser
                     }
                 });
@@ -91,29 +89,24 @@ export const onManageUser = {
                     message: "Already have referal"
                 });
             } else {
-                let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
-                let points = checkBoughtSeasonBadge[0] ? 2000 : 1000
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
                 }, {
-                    points: user.points + points * user.multiplier,
+                    points: user.points + 1000 * user.multiplier,
                     refUser: refUser._id
                 })
-
-                checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(refUser._id.toString())
-                points = checkBoughtSeasonBadge[0] ? 2000 : 1000
 
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(refUser._id.toString())
                 }, {
-                    points: refUser.points + points * refUser.multiplier,
+                    points: refUser.points + 1000 * refUser.multiplier,
                     refCount: refUser.refCount + 1,
                 })
                 let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
                 return res.status(200).send({
                     data: {
-                        points: points * user.multiplier,
+                        points: 1000 * user.multiplier,
                         user: newUser
                     }
                 });
@@ -191,7 +184,7 @@ export const onManageUser = {
         try {
             const boc = req.body.boc
             const _id = req.user.id
-            
+
             let tx = Cell.fromBase64(boc).hash().toString("base64")
             let txData = await getTxData({
                 hash: tx,
@@ -203,7 +196,7 @@ export const onManageUser = {
                 });
             }
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-         
+
             let time = txData.data["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
@@ -253,7 +246,7 @@ export const onManageUser = {
         try {
             const _id = req.user.id
             const boc = req.body.boc
-            
+
             let tx = Cell.fromBase64(boc).hash().toString("base64")
             let txData = await getTxData({
                 hash: tx,
@@ -265,7 +258,7 @@ export const onManageUser = {
                 });
             }
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-         
+
             let time = txData.data["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
@@ -313,7 +306,8 @@ export const onManageUser = {
 
     doGetLeaderboard: async (req: any, res: any, next: any) => {
         try {
-            let limit = parseInt(req.query.limit) || 100000;
+            const _id = req.user.id
+            let limit = parseInt(req.query.limit) || 10;
 
             const users = await User.aggregate([
                 { $sort: { points: -1 } },
@@ -335,16 +329,28 @@ export const onManageUser = {
             ]);
 
             let userRank = 0
-            if (req.query.userId != null) {
-                let userId = req.query.userId
-                const allUsers = await User.find().sort({ points: -1 });
-                userRank = allUsers.findIndex((u: any) => u._id.equals(new mongoose.Types.ObjectId(userId))) + 1;
+            const allUsers = await User.find({ role: "user" }).sort({ points: -1 });
+            let indexOfUser = 0
+            userRank = allUsers.findIndex((u: any, idx: any) => {
+                indexOfUser = idx;
+                return u._id.equals(new mongoose.Types.ObjectId(_id))
+            }) + 1;
+
+            let usersNearCurrentRank = []
+            let checkBoughtSeasonBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+            if (checkBoughtSeasonBadge[0]) {
+                usersNearCurrentRank.push(allUsers[indexOfUser - 2])
+                usersNearCurrentRank.push(allUsers[indexOfUser - 1])
+                usersNearCurrentRank.push(allUsers[indexOfUser])
+                usersNearCurrentRank.push(allUsers[indexOfUser + 1])
+                usersNearCurrentRank.push(allUsers[indexOfUser + 2])
             }
 
             return res.status(200).send({
                 data: {
                     leaderboard: users,
-                    currentRank: userRank
+                    currentRank: userRank,
+                    usersNearCurrentRank
                 }
             });
         } catch (err: any) {
@@ -361,7 +367,7 @@ export const onManageUser = {
             const refUserId = req.body.refUserId // ref user
             const tokenId = req.body.tokenId
 
-            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) }) 
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             let userAddress = Address.parse(OWNER_ADDRESS)
             if (refUserId != null) {
                 let refUserFrom = await User.findOne({ _id: new mongoose.Types.ObjectId(refUserId) })
@@ -378,6 +384,14 @@ export const onManageUser = {
                     message: "Please link your account with your wallet"
                 });
             }
+
+            let latestSeasonBadgeTx = await SeasonBadgeTx.findOne().sort({ createdAt: -1 });
+            if (latestSeasonBadgeTx.tokenId == tokenId.toString()) {
+                return res.status(400).send({
+                    message: "Please buy again"
+                });
+            }
+
             nftItemContent.storeAddress(Address.parse(user.address));
 
             const uriContent = beginCell();
@@ -411,9 +425,9 @@ export const onManageUser = {
             const address = req.body.address
 
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-                return res.status(400).send({
-                    message: "invalid call"
-                });
+            return res.status(400).send({
+                message: "invalid call"
+            });
 
             await User.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(_id)
@@ -471,19 +485,19 @@ async function checkYesterdayAttendance(userId: string) {
     } else {
         return false;
     }
-} 
+}
 
 export async function updatePointForRefUser(_id: string, newPonts: number) {
     let refUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
     await User.findOneAndUpdate({
         _id: new mongoose.Types.ObjectId(_id)
     }, {
-        points: refUser.points + (newPonts * SHARE_REF)/100,
+        points: refUser.points + (newPonts * SHARE_REF) / 100,
     })
 }
 
 export async function getNftAddress(collectionAddress: Address, itemIndex: number) {
-    const client = new TonClient({ 
+    const client = new TonClient({
         endpoint: TON_CENTER_RPC,
         apiKey: process.env.API_KEY
     });

@@ -238,7 +238,7 @@ export const onManageWordGame = {
 
             return res.status(200).send({
                 data: {
-                    point: points * user.multiplier,
+                    points: points * user.multiplier,
                     user: newUser
                 },
             });
