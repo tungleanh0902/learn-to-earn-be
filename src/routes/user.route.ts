@@ -17,7 +17,7 @@ manageUser.post("/check_yesterday", validate.auth, onManageUser.doCheckYesterday
 
 manageUser.post("/doRef", validate.auth, onManageUser.doRef)
 
-manageUser.post("/leaderboard", onManageUser.doGetLeaderboard);
+manageUser.post("/leaderboard", validate.auth, onManageUser.doGetLeaderboard);
 
 manageUser.post("/connect_wallet", validate.auth, onManageUser.doConnectWallet);
 
