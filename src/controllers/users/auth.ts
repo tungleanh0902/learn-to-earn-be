@@ -5,6 +5,7 @@ require('dotenv').config()
 export async function login (req: any, res: any) {
     try {
         const telegramUserId = req.body.telegramUserId
+        const username = req.body?.username
 
         let user = await User.findOne({ telegramUserId })
 
@@ -14,7 +15,16 @@ export async function login (req: any, res: any) {
                 points: 0,
                 tickets: 0,
                 role: "user",
-                refCode: telegramUserId
+                refCode: telegramUserId,
+                username
+            })
+        }
+
+        if (username) {
+            await User.findOneAndUpdate({
+                telegramUserId
+            }, {
+                username,
             })
         }
 
