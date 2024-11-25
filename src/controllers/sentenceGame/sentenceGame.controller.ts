@@ -70,27 +70,18 @@ export const onManageSentenceGame = {
 
             const sentences = await Sentence.aggregate([
                 { $match: { isHidden: false } },
-                { $sample: { size: 5 } },
+                { $sample: { size: 1 } },
             ])
 
-            let answerIds = []
-            let sentenceIds = []
             for (let index = 0; index < sentences.length; index++) {
                 const sentence = sentences[index];
                 sentence.content = shuffle(sentence.content)
-                let answer = await SentenceAnswer.create({
-                    userId: _id
-                })
-                answerIds.push(answer._id)
-                sentenceIds.push(sentence._id)
             }
 
             return res.status(200).send({
                 data: {
                     challenge: sentences,
-                    answerIds,
-                    // fix multiple sentence
-                    sentenceId: sentences[0]._id
+                    sentence: sentences[0]._id
                 }
             });
         } catch (err: any) {
@@ -110,30 +101,20 @@ export const onManageSentenceGame = {
                 });
             }
 
-            const contents = req.body.contents
-            const anwserIds = req.body.anwserIds
-            const sentenceIds = req.body.sentenceIds
+            const content = req.body.content
+            const sentenceId = req.body.sentenceId
             
             let points = 0;
-            for (let index = 0; index < anwserIds.length; index++) {
-                const anwserId = anwserIds[index];
-                let sentenceAnswer = await SentenceAnswer.findOne({ _id: new mongoose.Types.ObjectId(anwserId) })
-                if (!sentenceAnswer || sentenceAnswer?.userId.toString() !== _id || sentenceAnswer?.content?.length > 0) {
-                    return res.status(400).send({
-                        message: "Answer unvailable"
-                    });
-                }
-                let sentence = await Sentence.findOne({ _id: new mongoose.Types.ObjectId(sentenceIds[index]) })
-                if (sentence.content.join() === contents[index].join()) {
-                    points += sentenceAnswer.points;
-                }
 
-                await SentenceAnswer.findOneAndUpdate({
-                    _id: new mongoose.Types.ObjectId(anwserId)
-                }, {
-                    content: contents[index]
-                })
+            let sentence = await Sentence.findOne({ _id: new mongoose.Types.ObjectId(sentenceId) })
+            if (sentence.content.join() === content.join()) {
+                points += sentence.points;
             }
+
+            await SentenceAnswer.create({
+                content: content,
+                user: _id
+            })
 
             await User.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(_id)
