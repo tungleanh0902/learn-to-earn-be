@@ -167,7 +167,7 @@ export const onManageWordGame = {
                 data: {
                     challenge: result,
                     answerId: answer._id,
-                    topicId: topic[0]
+                    topic: topic[0]
                 }
             });
         } catch (err: any) {
