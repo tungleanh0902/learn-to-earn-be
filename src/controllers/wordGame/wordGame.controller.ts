@@ -189,15 +189,7 @@ export const onManageWordGame = {
             }
 
             const choosenWordIds = req.body.choosenWordIds
-            const anwserId = req.body.anwserId
             const topicId = req.body.topicId
-
-            let wordAnswer = await WordAnswer.findOne({ _id: new mongoose.Types.ObjectId(anwserId) })
-            if (!wordAnswer || wordAnswer?.userId.toString() != _id || wordAnswer?.wordIdsAnswer.length > 0) {
-                return res.status(400).send({
-                    message: "Answer unvailable"
-                });
-            }
 
             let points = 0;
             let convertObjectId = []
@@ -207,9 +199,9 @@ export const onManageWordGame = {
                 convertObjectId.push(convertedWordId)
                 let word = await Words.findOne({ _id: convertedWordId })
                 if (word.topicIds.includes(new mongoose.Types.ObjectId(topicId))) {
-                    points+=10;
+                    points+=1000;
                 } else {
-                    points-=10;
+                    points-=1000;
                 }
             }
             if (points < 0) {
@@ -227,11 +219,11 @@ export const onManageWordGame = {
                 await updatePointForRefUser(user.refUser.toString(), points * user.multiplier)
             }
 
-            await WordAnswer.findOneAndUpdate({
-                _id: new mongoose.Types.ObjectId(anwserId)
-            }, {
+            await WordAnswer.create({
                 wordIdsAnswer: convertObjectId,
-                points
+                points,
+                topicId,
+                userId: _id
             })
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
