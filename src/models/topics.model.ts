@@ -7,6 +7,10 @@ const topicSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    meaning: {
+        type: String,
+        required: true,
+    },
     isHidden: {
         type: Boolean,
         default: false
