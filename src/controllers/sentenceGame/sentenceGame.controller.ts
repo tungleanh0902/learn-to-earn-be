@@ -1,4 +1,6 @@
 import mongoose from "mongoose"
+var rwc = require("random-weighted-choice");
+
 import { shuffle } from "./../../helper/helper"
 import { updatePointForRefUser } from "../../controllers/users/user.controller"
 
@@ -116,11 +118,25 @@ export const onManageSentenceGame = {
                 user: _id
             })
 
+            // random possibility of drop ton
+            var table = [
+                { weight: 1, id: 1 },
+                { weight: 9, id: 0 },
+            ];
+            let dropTon = false;
+            let userTon = user?.bonusTon ?? 0
+            let bonusTon = 0
+            if (user.refCount >= 10 && rwc(table) == 1) {
+                dropTon = true
+                bonusTon = 0.001
+            }
+
             await User.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(_id)
             }, {
                 points: user.points + points * user.multiplier,
                 tickets: user.tickets - 1,
+                bonusTon: userTon + bonusTon
             })
 
             if (user.refUser != null) {
@@ -132,7 +148,8 @@ export const onManageSentenceGame = {
             return res.status(200).send({
                 data: {
                     points: points * user.multiplier,
-                    user: newUser
+                    user: newUser,
+                    bonusTon
                 }
             });
         } catch (err: any) {

@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import { shuffle } from "./../../helper/helper"
 import { updatePointForRefUser } from "../../controllers/users/user.controller"
+var rwc = require("random-weighted-choice");
 
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
@@ -18,7 +19,8 @@ export const onManageWordGame = {
             for (let index = 0; index < topics.length; index++) {
                 const topic = topics[index];
                 await Topics.create({
-                    content: topic,
+                    content: topic.content,
+                    meaning: topic.meaning,
                     createdBy: _id
                 })
             }
@@ -37,12 +39,14 @@ export const onManageWordGame = {
         try {
             const topicId = req.body.topicId
             const content = req.body.content
+            const meaning = req.body.meaning
             const isHidden = req.body.isHidden
 
             await Topics.findOneAndUpdate({
                 _id: new mongoose.Types.ObjectId(topicId)
             }, {
                 content,
+                meaning,
                 isHidden
             })
 
@@ -76,6 +80,7 @@ export const onManageWordGame = {
                 
                 await Words.create({
                     content: word.content,
+                    meaning: word.meaning,
                     createdBy: _id,
                     topicIds: convertTopicId
                 })
@@ -95,6 +100,7 @@ export const onManageWordGame = {
         try {
             const wordId = req.body.wordId
             const content = req.body.content
+            const meaning = req.body.meaning
             const topicIds = req.body.topicIds
             const isHidden = req.body.isHidden
 
@@ -114,6 +120,7 @@ export const onManageWordGame = {
                 _id: new mongoose.Types.ObjectId(wordId)
             }, {
                 content,
+                meaning,
                 topicIds,
                 isHidden
             })
@@ -130,8 +137,8 @@ export const onManageWordGame = {
 
     getChallenge: async (req: any, res: any, next: any) => {
         try {
-            let total = parseInt(req.query.total) || 40;
-            let correct = parseInt(req.query.correct) || 10;
+            let total = parseInt(req.query.total) || 30;
+            let correct = parseInt(req.query.correct) || 20;
 
             const _id = req.user.id
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
@@ -189,15 +196,7 @@ export const onManageWordGame = {
             }
 
             const choosenWordIds = req.body.choosenWordIds
-            const anwserId = req.body.anwserId
             const topicId = req.body.topicId
-
-            let wordAnswer = await WordAnswer.findOne({ _id: new mongoose.Types.ObjectId(anwserId) })
-            if (!wordAnswer || wordAnswer?.userId.toString() != _id || wordAnswer?.wordIdsAnswer.length > 0) {
-                return res.status(400).send({
-                    message: "Answer unvailable"
-                });
-            }
 
             let points = 0;
             let convertObjectId = []
@@ -207,13 +206,26 @@ export const onManageWordGame = {
                 convertObjectId.push(convertedWordId)
                 let word = await Words.findOne({ _id: convertedWordId })
                 if (word.topicIds.includes(new mongoose.Types.ObjectId(topicId))) {
-                    points+=10;
+                    points+=100;
                 } else {
-                    points-=10;
+                    points-=100;
                 }
             }
             if (points < 0) {
                 points = 0
+            }
+
+            // random possibility of drop ton
+            var table = [
+                { weight: 1, id: 1 },
+                { weight: 9, id: 0 },
+            ];
+            let dropTon = false;
+            let userTon = user?.bonusTon ?? 0
+            let bonusTon = 0
+            if (user.refCount >= 10 && rwc(table) == 1) {
+                dropTon = true
+                bonusTon = 0.001
             }
 
             await User.findOneAndUpdate({
@@ -221,17 +233,18 @@ export const onManageWordGame = {
             }, {
                 points: user.points + points * user.multiplier,
                 tickets: user.tickets - 1,
+                bonusTon: userTon + bonusTon
             })
 
             if (user.refUser != null) {
                 await updatePointForRefUser(user.refUser.toString(), points * user.multiplier)
             }
 
-            await WordAnswer.findOneAndUpdate({
-                _id: new mongoose.Types.ObjectId(anwserId)
-            }, {
+            await WordAnswer.create({
                 wordIdsAnswer: convertObjectId,
-                points
+                points,
+                topicId,
+                userId: _id
             })
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
@@ -239,7 +252,8 @@ export const onManageWordGame = {
             return res.status(200).send({
                 data: {
                     points: points * user.multiplier,
-                    user: newUser
+                    user: newUser,
+                    bonusTon
                 },
             });
         } catch (err: any) {

@@ -6,6 +6,10 @@ const wordSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    meaning: {
+        type: String,
+        required: true,
+    },
     topicIds: {
         type: [mongoose.Types.ObjectId],
         required: true
