@@ -26,3 +26,5 @@ manageUser.post("/grant", validate.auth, onManageUser.doGrantAdmin)
 manageUser.post("/buy_more_quizz", validate.auth, onManageUser.doBuyMoreQuizz)
 
 manageUser.post("/mint_body_data", validate.auth, onManageUser.doGetMintBodyData)
+
+manageUser.post("/check_current_rank", validate.auth, onManageUser.doCheckTop10)

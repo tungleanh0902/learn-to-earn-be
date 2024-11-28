@@ -9,7 +9,7 @@ const txOnchainSchema = new mongoose.Schema({
     },
     action: { 
         type: String, 
-        enum: ['transfer', 'mint_nft'], 
+        enum: ['buy_voucher', 'mint_nft', 'save_streak', 'buy_quizz'], 
     },
     userId: {
         type: mongoose.Types.ObjectId,
@@ -18,6 +18,9 @@ const txOnchainSchema = new mongoose.Schema({
     amount: {
         type: Number,
         require: true
+    },
+    voucherId: {
+        type: mongoose.Types.ObjectId,
     }
 }, {
     timestamps: true

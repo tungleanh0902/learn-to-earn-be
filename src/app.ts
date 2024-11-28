@@ -10,6 +10,7 @@ import { manageSentenceGame } from "./routes/sentenceGame.route";
 import { manageUser } from "./routes/user.route";
 import { manageWordGame } from "./routes/wordGame.route";
 import { manageSocialTask } from "./routes/socialTask.route";
+import { manageVoucher } from "./routes/voucher.route";
 
 const app = express();
 app.use(cors()); 
@@ -39,6 +40,7 @@ app.use("/api/sentence", manageSentenceGame);
 app.use("/api/user", manageUser);
 app.use("/api/word", manageWordGame);
 app.use("/api/social_task", manageSocialTask);
+app.use("/api/voucher", manageVoucher);
 
 app.use("/api/ping", async (req: any, res: any, next: any)=>{
   return res.status(200).send({
