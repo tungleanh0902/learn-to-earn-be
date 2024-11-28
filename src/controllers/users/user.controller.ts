@@ -1,14 +1,14 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
-import { tonQuery, OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
+import { OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
 import { Address, beginCell, Cell, toNano, TonClient } from "@ton/ton";
 import { getTxData } from "../../helper/helper";
 
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
-const SeasonBadge = require('../../models/seasonBadge.model')
 const User = require('../../models/users.model')
 const TxOnchain = require('../../models/txOnchain.model')
 const DailyAttendence = require('../../models/dailyAttendance.model')
+const Voucher = require('../../models/voucher.model')
 
 require('dotenv').config()
 
@@ -223,7 +223,7 @@ export const onManageUser = {
             await TxOnchain.create({
                 userId: _id,
                 tx,
-                action: "transfer",
+                action: "save_streak",
                 amount: SAVE_STREAK_FEE
             })
 
@@ -285,7 +285,7 @@ export const onManageUser = {
             await TxOnchain.create({
                 userId: _id,
                 tx,
-                action: "transfer",
+                action: "buy_quizz",
                 amount: MORE_QUIZZ_FEE
             })
 
@@ -351,6 +351,29 @@ export const onManageUser = {
                     leaderboard: users,
                     currentRank: userRank,
                     usersNearCurrentRank
+                }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doCheckTop10: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let availableVoucher = await Voucher.find({ owner: null })
+            if (availableVoucher.length == 0) {
+                return res.status(400).send({
+                    message: "Out of available voucher"
+                });
+            }
+            let userRank = getCurrentRank(_id)
+            return res.status(200).send({
+                data: {
+                    userRank: userRank,
                 }
             });
         } catch (err: any) {
@@ -507,4 +530,12 @@ export async function getNftAddress(collectionAddress: Address, itemIndex: numbe
         [{ type: "int", value: BigInt(itemIndex) }]
     );
     return response.stack.readAddress();
+}
+
+export async function getCurrentRank(id: string) {
+    const allUsers = await User.find({ role: "user" }).sort({ points: -1 });
+    let userRank = allUsers.findIndex((u: any, idx: any) => {
+        return u._id.equals(new mongoose.Types.ObjectId(id))
+    }) + 1;
+    return userRank
 }
