@@ -6,10 +6,6 @@ const cvProfileSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         required: true,
     },
-    phone: {
-        type: String,
-        required: true,
-    },
     email: {
         type: String,
         required: true

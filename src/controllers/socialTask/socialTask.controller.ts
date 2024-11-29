@@ -41,7 +41,6 @@ export const onManageSocialTask = {
         try {
             const _id = req.user.id
             const taskId = req.body.taskId
-            const phone = req.body.phone
             const name = req.body.name
             const email = req.body.email
             const link = req.body.link
@@ -52,12 +51,6 @@ export const onManageSocialTask = {
                 });
             }
 
-            let pattern = /(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b/
-            if (!pattern.test(phone)) {
-                return res.status(400).send({
-                    message: "Invalid phone number"
-                });
-            }
             let emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
             if (!emailPattern.test(email)) {
                 return res.status(400).send({
@@ -82,7 +75,6 @@ export const onManageSocialTask = {
 
             await CVProfile.create({
                 userId: _id,
-                phone,
                 name,
                 link,
                 email
