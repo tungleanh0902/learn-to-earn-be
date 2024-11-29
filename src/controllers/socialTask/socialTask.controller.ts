@@ -3,6 +3,7 @@ import mongoose from "mongoose"
 
 const SocialTask = require('../../models/socialTask.model')
 const SocialTaskDone = require('../../models/socialTaskDone.model')
+const CVProfile = require('../../models/cvprofile')
 const User = require('../../models/users.model')
 
 require('dotenv').config()
@@ -28,6 +29,90 @@ export const onManageSocialTask = {
             return res.status(200).send({
                 data: "success"
             });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doCreateCVProfile: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            const taskId = req.body.taskId
+            const phone = req.body.phone
+            const name = req.body.name
+            const email = req.body.email
+            const link = req.body.link
+
+            if (link.includes("https://www.facebook.com/") == false && link.includes("https://www.linkedin.com/in") == false) {
+                return res.status(400).send({
+                    message: "Invalid link"
+                });
+            }
+
+            let pattern = /(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b/
+            if (!pattern.test(phone)) {
+                return res.status(400).send({
+                    message: "Invalid phone number"
+                });
+            }
+            let emailPattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            if (!emailPattern.test(email)) {
+                return res.status(400).send({
+                    message: "Invalid email"
+                });
+            }
+
+            let profile = await CVProfile.findOne({
+                userId: new mongoose.Types.ObjectId(_id),
+            })
+
+            if (profile != null) {
+                return res.status(400).send({
+                    message: "Already submit profile"
+                });
+            }
+
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            let task = await SocialTask.findOne({
+                _id: new mongoose.Types.ObjectId(taskId)
+            })
+
+            await CVProfile.create({
+                userId: _id,
+                phone,
+                name,
+                link,
+                email
+            })
+
+            await SocialTaskDone.create({
+                taskId: new mongoose.Types.ObjectId(taskId),
+                userId: new mongoose.Types.ObjectId(_id)
+            })
+
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                tickets: user.tickets + 20,
+                points: user.points + task.points * user.multiplier
+            })
+
+            if (user.refUser != null) {
+                await updatePointForRefUser(user.refUser.toString(), task.points * user.multiplier)
+            }
+
+            user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
+            return res.status(200).send({
+                data: {
+                    user,
+                    points: task.points * user.multiplier,
+                    bonusTickets: 20
+                }
+            }); 
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({
