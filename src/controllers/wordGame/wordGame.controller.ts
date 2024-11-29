@@ -220,11 +220,9 @@ export const onManageWordGame = {
                 { weight: 1, id: 1 },
                 { weight: 9, id: 0 },
             ];
-            let dropTon = false;
             let userTon = user?.bonusTon ?? 0
             let bonusTon = 0
             if (user.refCount >= 10 && rwc(table) == 1) {
-                dropTon = true
                 bonusTon = 0.001
             }
 
@@ -262,5 +260,101 @@ export const onManageWordGame = {
                 message: err.message
             });
         }
-    }
+    },
+
+    getGameMatchMeaning: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            if (user.tickets == 0) {
+                return res.status(400).send({
+                    message: "Out of tickets"
+                });
+            }
+
+            const words = await Words.aggregate([
+                { $match: { isHidden: false } },
+                { $sample: { size: 20 } }
+            ])
+
+            return res.status(200).send({
+                data: {
+                    challenge: words,
+                }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doAnswerMatchMeaning: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let user = await User.findOne({ _id })
+            if (user.tickets == 0) {
+                return res.status(400).send({
+                    message: "Out of tickets"
+                });
+            }
+
+            const answers = req.body.answers
+
+            let points = 0
+            for (let index = 0; index < answers.length; index++) {
+                const answer = answers[index];
+                let word = await Words.findOne({ content: answer.content })
+                if (word.meaning == answer.meaning) {
+                    points+=100;
+                }
+            }
+
+            // random possibility of drop ton
+            var table = [
+                { weight: 1, id: 1 },
+                { weight: 9, id: 0 },
+            ];
+            let userTon = user?.bonusTon ?? 0
+            let bonusTon = 0
+            if (user.refCount >= 10 && rwc(table) == 1) {
+                bonusTon = 0.001
+            }
+
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                points: user.points + points * user.multiplier,
+                tickets: user.tickets - 1,
+                bonusTon: userTon + bonusTon
+            })
+
+            await WordAnswer.create({
+                wordIdsAnswer: answers,
+                points,
+                topicId: null,
+                userId: _id
+            })
+
+            if (user.refUser != null) {
+                await updatePointForRefUser(user.refUser.toString(), points * user.multiplier)
+            }
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
+            return res.status(200).send({
+                data: {
+                    points: points * user.multiplier,
+                    user: newUser,
+                    bonusTon
+                },
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
 }

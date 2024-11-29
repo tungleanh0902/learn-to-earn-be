@@ -15,3 +15,7 @@ manageWordGame.post("/change_word", validate.auth, validate.isAdmin, onManageWor
 manageWordGame.post("/get_game", validate.auth, onManageWordGame.getChallenge);
 
 manageWordGame.post("/answer", validate.auth, onManageWordGame.doAnswer);
+
+manageWordGame.post("/get_game_match_meaning", validate.auth, onManageWordGame.getGameMatchMeaning);
+
+manageWordGame.post("/answer_match_meaning", validate.auth, onManageWordGame.doAnswerMatchMeaning);
