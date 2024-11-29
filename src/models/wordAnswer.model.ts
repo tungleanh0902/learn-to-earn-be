@@ -7,7 +7,6 @@ const wordAnswerSchema = new mongoose.Schema({
     },
     topicId: {
         type: mongoose.Types.ObjectId,
-        required: true
     },
     userId: {
         type: mongoose.Types.ObjectId,
