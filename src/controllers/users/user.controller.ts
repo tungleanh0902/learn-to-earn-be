@@ -517,9 +517,6 @@ export const onManageUser = {
                 }
             });
         } catch (err: any) {
-            console.log("//////");
-            console.log(err);
-            console.log(err.message)
             return res.status(400).send({
                 message: err.message
             });
