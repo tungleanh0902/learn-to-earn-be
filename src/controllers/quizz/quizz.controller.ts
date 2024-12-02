@@ -376,7 +376,7 @@ export const onManageLesson = {
                         tickets += 1
                     }
                 } else {
-                    if (answers < 8) {
+                    if (answers < 5) {
                         tickets += 1
                     }
                 }
