@@ -1,8 +1,9 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 import { OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
-import { Address, beginCell, Cell, toNano, TonClient } from "@ton/ton";
-import { getTxData } from "../../helper/helper";
+import { Address, beginCell, Cell, internal, toNano, TonClient, WalletContractV4 } from "@ton/ton";
+import { getTxData, sleep } from "../../helper/helper";
+import { mnemonicToWalletKey } from '@ton/crypto';
 
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
 const User = require('../../models/users.model')
@@ -435,6 +436,89 @@ export const onManageUser = {
                 }
             });
         } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doWithdrawTon: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            const amount = req.body.amount
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
+            if (user.bonusTon < 0.1) {
+                return res.status(400).send({
+                    message: "Accumulate above 0.1 ton to withdraw"
+                });
+            }
+            if (!user.address) {
+                return res.status(400).send({
+                    message: "Connect your wallet first"
+                });
+            }
+            if (amount > user.bonusTon) {
+                return res.status(400).send({
+                    message: "Exceed ton balance"
+                });
+            }
+            const mnemonic = process.env.MNEMONIC || ""
+            const mnemonicArray = mnemonic.split(" ");
+
+            let { publicKey, secretKey } = await mnemonicToWalletKey(mnemonicArray);
+            publicKey = Buffer.from(publicKey);
+            secretKey = Buffer.from(secretKey);
+
+            const wallet = WalletContractV4.create({ publicKey, workchain: 0 })
+            const client = new TonClient({
+                endpoint: TON_CENTER_RPC,
+                apiKey: process.env.API_KEY
+            });
+            const balance = await client.getBalance(wallet.address);
+            if (Number(amount) * 10**9 > balance) {
+                return res.status(400).send({
+                    message: "Connect admin to ask for support"
+                });
+            }
+            const walletContract = client.open(wallet);
+            const seqno = await walletContract.getSeqno();
+            await walletContract.sendTransfer({
+                sendMode: 1,
+                seqno: seqno,
+                secretKey,
+                messages: [
+                    internal({
+                        to: user.address,
+                        value: amount, // 0.05 TON
+                        bounce: false,
+                    })
+                ]
+            });
+
+            // wait until confirmed
+            let currentSeqno = seqno;
+            while (currentSeqno == seqno) {
+                console.log("waiting for transaction to confirm...");
+                await sleep(1500);
+                currentSeqno = await walletContract.getSeqno();
+            }
+
+            user = await User.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(_id) }, {
+                bonusTon: user.bonusTon - amount
+            }, {
+                new: true
+            })
+
+            return res.status(200).send({
+                data: {
+                    user
+                }
+            });
+        } catch (err: any) {
+            console.log("//////");
+            console.log(err);
             console.log(err.message)
             return res.status(400).send({
                 message: err.message
