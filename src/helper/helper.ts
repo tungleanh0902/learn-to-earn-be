@@ -43,3 +43,5 @@ export async function getTxData(options: any): Promise<AxiosResponse | null> {
         }, refetchInterval);
     });
 }
+
+export const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms));

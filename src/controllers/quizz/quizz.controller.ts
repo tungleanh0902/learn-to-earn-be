@@ -357,40 +357,39 @@ export const onManageLesson = {
                 _id: new mongoose.Types.ObjectId(option.questionId)
             })
 
-            const startOfToday = new Date();
             let newPonts = 0
+            let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(_id)
+            let tickets = 0;
+                
+            if (checkBoughtSeaconBadge[0] == true) {
+                if (answers < 25) {
+                    tickets += 1
+                }
+            } else {
+                if (answers < 5) {
+                    tickets += 1
+                }
+            }
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             // multiplier + 0.1 khi diem danh
             if (option.isCorrect == true) {
-                let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
-                let tickets = 0;
-                let checkBoughtSeaconBadge = await helperFunction.checkBoughtSeasonBadge(user._id)
-                // count document that this user answered today
-                startOfToday.setHours(0, 0, 0, 0);
-                let answers = await QuizzAnswer.countDocuments({
-                    createdAt: {
-                        $gte: startOfToday
-                    }
-                })
-                if (checkBoughtSeaconBadge[0] == true) {
-                    if (answers < 25) {
-                        tickets += 1
-                    }
-                } else {
-                    if (answers < 5) {
-                        tickets += 1
-                    }
-                }
                 newPonts = question.points * user.multiplier
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
                 }, {
                     points: user.points + newPonts,
-                    tickets,
+                    tickets: user.tickets + tickets,
                 })
 
                 if (user.refUser != null) {
                     await updatePointForRefUser(user.refUser.toString(), newPonts)
                 }
+            } else {
+                await User.findOneAndUpdate({
+                    _id: new mongoose.Types.ObjectId(_id)
+                }, {
+                    tickets: user.tickets + tickets,
+                })
             }
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
@@ -591,20 +590,27 @@ export const onManageLesson = {
             } 
 
             let newPonts = 0
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
             // multiplier + 0.1 khi diem danh
             if (option.isCorrect == true) {
-                let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
                 newPonts = question.points * user.multiplier
                 await User.findOneAndUpdate({
                     _id: new mongoose.Types.ObjectId(_id)
                 }, {
                     points: user.points + newPonts,
+                    tickets: user.tickets + 1,
                 })
 
                 if (user.refUser != null) {
                     await updatePointForRefUser(user.refUser.toString(), newPonts)
                 }
+            } else {
+                await User.findOneAndUpdate({
+                    _id: new mongoose.Types.ObjectId(_id)
+                }, {
+                    tickets: user.tickets + 1,
+                })
             }
 
             await QuizzAnswer.create({
