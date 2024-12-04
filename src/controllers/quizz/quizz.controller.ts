@@ -328,7 +328,10 @@ export const onManageLesson = {
             ])
 
             return res.status(200).send({
-                data: lessons
+                data: {
+                    lessons,
+                    answers
+                }
             });
         } catch (err: any) {
             return res.status(400).send({
@@ -402,7 +405,8 @@ export const onManageLesson = {
             return res.status(200).send({
                 data: {
                     points: newPonts,
-                    user: newUser
+                    user: newUser,
+                    answers
                 }
             });
         } catch (err: any) {
@@ -681,6 +685,7 @@ async function checkAnswersDaily(userId: string) {
     startOfToday.setHours(0, 0, 0, 0);
     let answers = await QuizzAnswer.countDocuments({
         isCampaign: false,
+        isAddition: false,
         createdAt: {
             $gte: startOfToday
         },
@@ -697,6 +702,7 @@ async function checkAnswersCampaignWeekly(userId: string) {
     let startOfWeek = new Date(d.setHours(0, 0, 0, 0));
     let answers = await QuizzAnswer.countDocuments({
         isCampaign: true,
+        isAddition: false,
         createdAt: {
             $gte: startOfWeek
         },
@@ -720,7 +726,7 @@ async function countAnswerDaily(userId: string, isCorrect: any) {
         { $unwind: "$option"},
         { 
             '$match': { 
-                "isCampaign": false, 
+                "isCampaign": false,
                 "createdAt": {
                     $gte: startOfToday
                 },
