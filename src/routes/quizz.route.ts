@@ -31,3 +31,5 @@ manageQuizz.post("/answer_special_quizz", validate.auth, onManageLesson.doAnswer
 manageQuizz.post("/random_lesson_for_campaign", validate.auth, onManageLesson.doGetRandomLessonForCampaign);
 
 manageQuizz.post("/answer_campaign", validate.auth, onManageLesson.doAnswerQuizzCampaign);
+
+manageQuizz.post("/summary", validate.auth, onManageLesson.doSummaryQuizzDaily);
