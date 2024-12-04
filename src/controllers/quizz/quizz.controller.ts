@@ -264,7 +264,7 @@ export const onManageLesson = {
             let answers = await checkAnswersDaily(_id)
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
-            if (user.moreQuizz == 0 && answers >= 100) {
+            if (user.moreQuizz == 0 && answers >= 25) {
                 return res.status(400).send({
                     message: "Out of limit today"
                 });
@@ -273,8 +273,8 @@ export const onManageLesson = {
             let answer = 0
             if (user.moreQuizz > 0) {
                 answer = user.moreQuizz
-            } else if (answers < 100) {
-                answer = 100 - answers
+            } else if (answers < 25) {
+                answer = 25 - answers
             }
 
             const lessons = await Lesson.aggregate([
@@ -634,6 +634,25 @@ export const onManageLesson = {
             });
         }
     },
+
+    doSummaryQuizzDaily: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let correctAnswer = await countAnswerDaily(_id, true)
+            let falseAnswer = await countAnswerDaily(_id, null)
+            return res.status(200).send({
+                data: {
+                    correctAnswers: correctAnswer.length,
+                    falseAnswers: falseAnswer.length
+                }
+            }); 
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    }
 }
 
 async function saveQuestions(questionInput: { content: any; isCorrect: any; options: any, points: number }, userId: any, lessonId: any) {
@@ -683,6 +702,33 @@ async function checkAnswersCampaignWeekly(userId: string) {
         },
         userId: new mongoose.Types.ObjectId(userId)
     })
+    return answers
+}
+
+async function countAnswerDaily(userId: string, isCorrect: any) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    let answers = await QuizzAnswer.aggregate([
+        {
+            '$lookup': {
+                from: "options",
+                localField: "optionId",
+                foreignField: "_id",
+                as: "option"
+            }
+        },
+        { $unwind: "$option"},
+        { 
+            '$match': { 
+                "isCampaign": false, 
+                "createdAt": {
+                    $gte: startOfToday
+                },
+                "userId": new mongoose.Types.ObjectId(userId),
+                "option.isCorrect": isCorrect
+            } 
+        },
+    ])
     return answers
 }
 
