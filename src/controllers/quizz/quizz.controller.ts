@@ -328,10 +328,11 @@ export const onManageLesson = {
             ])
 
             return res.status(200).send({
-                data: {
-                    lessons,
-                    answers
-                }
+                data: lessons
+                // data: {
+                //     lessons,
+                //     answers
+                // }
             });
         } catch (err: any) {
             return res.status(400).send({
