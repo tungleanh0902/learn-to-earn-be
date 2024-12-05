@@ -404,6 +404,7 @@ export const onManageLesson = {
                 optionId,
                 userId: _id,
             })
+            answers = await checkAnswersDaily(_id)
 
             return res.status(200).send({
                 data: {
