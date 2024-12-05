@@ -265,8 +265,11 @@ export const onManageLesson = {
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
             if (user.moreQuizz == 0 && answers >= 25) {
-                return res.status(400).send({
-                    message: "Out of limit today"
+                return res.status(200).send({
+                    data: {
+                        lessons: [],
+                        answers: 25
+                    }
                 });
             }
 
@@ -328,11 +331,10 @@ export const onManageLesson = {
             ])
 
             return res.status(200).send({
-                data: lessons
-                // data: {
-                //     lessons,
-                //     answers
-                // }
+                data: {
+                    lessons,
+                    answers
+                }
             });
         } catch (err: any) {
             return res.status(400).send({

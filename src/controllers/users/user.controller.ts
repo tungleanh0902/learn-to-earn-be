@@ -506,7 +506,7 @@ export const onManageUser = {
             }
 
             user = await User.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(_id) }, {
-                bonusTon: user.bonusTon - amount
+                bonusTon: (user.bonusTon*10**9 - amount*10**9)/(10**9)
             }, {
                 new: true
             })
