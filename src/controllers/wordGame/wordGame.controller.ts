@@ -226,7 +226,7 @@ export const onManageWordGame = {
             // if (user.refCount >= 10 && rwc(table) == 1) {
             //     bonusTon = 0.001
             // }
-            if (user.refCount >= 3 && points >= 1000) {
+            if (user.refCount >= 3 && points >= 200) {
                 bonusTon = 0.01
             }
 
@@ -325,7 +325,7 @@ export const onManageWordGame = {
             // if (user.refCount >= 10 && rwc(table) == 1) {
             //     bonusTon = 0.001
             // }
-            if (user.refCount >= 3 && points >= 1000) {
+            if (user.refCount >= 3 && points >= 200) {
                 bonusTon = 0.01
             }
 
