@@ -216,17 +216,14 @@ export const onManageWordGame = {
                 points = 0
             }
 
-            // // random possibility of drop ton
-            // var table = [
-            //     { weight: 1, id: 1 },
-            //     { weight: 9, id: 0 },
-            // ];
+            // random possibility of drop ton
+            var table = [
+                { weight: 1, id: 1 },
+                { weight: 9, id: 0 },
+            ];
             let userTon = user?.bonusTon ?? 0
             let bonusTon = 0
-            // if (user.refCount >= 10 && rwc(table) == 1) {
-            //     bonusTon = 0.001
-            // }
-            if (user.refCount >= 3 && points >= 200) {
+            if (user.refCount >= 3 && rwc(table) == 1 && points >= 200) {
                 bonusTon = 0.01
             }
 
@@ -316,16 +313,13 @@ export const onManageWordGame = {
             }
 
             // random possibility of drop ton
-            // var table = [
-            //     { weight: 1, id: 1 },
-            //     { weight: 9, id: 0 },
-            // ];
+            var table = [
+                { weight: 1, id: 1 },
+                { weight: 9, id: 0 },
+            ];
             let userTon = user?.bonusTon ?? 0
             let bonusTon = 0
-            // if (user.refCount >= 10 && rwc(table) == 1) {
-            //     bonusTon = 0.001
-            // }
-            if (user.refCount >= 3 && points >= 200) {
+            if (user.refCount >= 3 && rwc(table) == 1 && points >= 200) {
                 bonusTon = 0.01
             }
 
