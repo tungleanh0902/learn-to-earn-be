@@ -5,6 +5,7 @@ var rwc = require("random-weighted-choice");
 
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
+const MeanMatchingAnswer = require('../../models/matchMeaningSchema')
 const Topics = require('../../models/topics.model')
 const User = require('../../models/users.model')
 
@@ -315,14 +316,17 @@ export const onManageWordGame = {
             }
 
             // random possibility of drop ton
-            var table = [
-                { weight: 1, id: 1 },
-                { weight: 9, id: 0 },
-            ];
+            // var table = [
+            //     { weight: 1, id: 1 },
+            //     { weight: 9, id: 0 },
+            // ];
             let userTon = user?.bonusTon ?? 0
             let bonusTon = 0
-            if (user.refCount >= 10 && rwc(table) == 1) {
-                bonusTon = 0.001
+            // if (user.refCount >= 10 && rwc(table) == 1) {
+            //     bonusTon = 0.001
+            // }
+            if (user.refCount >= 3 && points >= 1000) {
+                bonusTon = 0.01
             }
 
             await User.findOneAndUpdate({
@@ -333,10 +337,9 @@ export const onManageWordGame = {
                 bonusTon: userTon + bonusTon
             })
 
-            await WordAnswer.create({
-                wordIdsAnswer: answers,
+            await MeanMatchingAnswer.create({
+                answer: answers,
                 points,
-                topicId: null,
                 userId: _id
             })
 
