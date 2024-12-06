@@ -201,7 +201,11 @@ export const onManageWordGame = {
 
             let points = 0;
             let convertObjectId = []
-            for (let index = 0; index < 30; index++) {
+            let answerLength = 30;
+            if (choosenWordIds.length < 30) {
+                answerLength = choosenWordIds.length
+            }
+            for (let index = 0; index < answerLength; index++) {
                 const wordId = choosenWordIds[index];
                 let convertedWordId = new mongoose.Types.ObjectId(wordId)
                 convertObjectId.push(convertedWordId)
@@ -304,7 +308,11 @@ export const onManageWordGame = {
             const answers = req.body.answers
 
             let points = 0
-            for (let index = 0; index < 30; index++) {
+            let answerLength = 30;
+            if (answers.length < 30) {
+                answerLength = answers.length
+            }
+            for (let index = 0; index < answerLength; index++) {
                 const answer = answers[index];
                 let word = await Words.findOne({ content: answer.content })
                 if (word.meaning == answer.meaning) {
