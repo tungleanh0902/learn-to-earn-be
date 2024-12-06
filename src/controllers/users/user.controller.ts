@@ -4,6 +4,7 @@ import { OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE
 import { Address, beginCell, Cell, internal, toNano, TonClient, WalletContractV4 } from "@ton/ton";
 import { getTxData, sleep } from "../../helper/helper";
 import { mnemonicToWalletKey } from '@ton/crypto';
+import { createTracking } from "../../controllers/tracking/tracking.controller";
 
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
 const User = require('../../models/users.model')
@@ -46,6 +47,7 @@ export const onManageUser = {
                 }
 
                 let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+                await createTracking(_id)
 
                 return res.status(200).send({
                     data: {
@@ -104,6 +106,7 @@ export const onManageUser = {
                     refCount: refUser.refCount + 1,
                 })
                 let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+                await createTracking(_id)
 
                 return res.status(200).send({
                     data: {

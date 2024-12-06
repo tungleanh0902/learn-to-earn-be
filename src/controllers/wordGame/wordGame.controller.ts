@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import { shuffle } from "./../../helper/helper"
 import { updatePointForRefUser } from "../../controllers/users/user.controller"
+import { createTracking } from "../../controllers/tracking/tracking.controller";
 var rwc = require("random-weighted-choice");
 
 const Words = require('../../models/words.model')
@@ -251,6 +252,7 @@ export const onManageWordGame = {
             })
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            await createTracking(_id)
 
             return res.status(200).send({
                 data: {
@@ -350,6 +352,7 @@ export const onManageWordGame = {
             }
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            await createTracking(_id)
 
             return res.status(200).send({
                 data: {

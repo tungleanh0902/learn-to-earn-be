@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import { helperFunction } from "./../seasonBadge/seasonBadge.controller"
 import { updatePointForRefUser } from "../users/user.controller"
+import { createTracking } from "../../controllers/tracking/tracking.controller"
 
 const Lesson = require('../../models/lessons.model')
 const Question = require('../../models/questions.model')
@@ -400,6 +401,8 @@ export const onManageLesson = {
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
+            await createTracking(_id)
+
             await QuizzAnswer.create({
                 optionId,
                 userId: _id,
@@ -463,6 +466,8 @@ export const onManageLesson = {
                     moreQuizz: user.moreQuizz - 1
                 })
             }
+
+            await createTracking(_id)
 
             await QuizzAnswer.create({
                 optionId,
@@ -626,6 +631,8 @@ export const onManageLesson = {
                 userId: _id,
                 isCampaign: true
             })
+
+            await createTracking(_id)
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
