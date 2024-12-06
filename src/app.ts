@@ -11,6 +11,7 @@ import { manageUser } from "./routes/user.route";
 import { manageWordGame } from "./routes/wordGame.route";
 import { manageSocialTask } from "./routes/socialTask.route";
 import { manageVoucher } from "./routes/voucher.route";
+import { manageTracking } from "./routes/tracking.route";
 
 const app = express();
 app.use(cors()); 
@@ -41,6 +42,7 @@ app.use("/api/user", manageUser);
 app.use("/api/word", manageWordGame);
 app.use("/api/social_task", manageSocialTask);
 app.use("/api/voucher", manageVoucher);
+app.use("/api/tracking", manageTracking);
 
 app.use("/api/ping", async (req: any, res: any, next: any)=>{
   return res.status(200).send({

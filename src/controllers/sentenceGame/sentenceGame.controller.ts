@@ -3,6 +3,7 @@ var rwc = require("random-weighted-choice");
 
 import { shuffle } from "./../../helper/helper"
 import { updatePointForRefUser } from "../../controllers/users/user.controller"
+import { createTracking } from "../../controllers/tracking/tracking.controller";
 
 const Sentence = require('../../models/sentences.model')
 const SentenceAnswer = require('../../models/sentenceAnswer.model')
@@ -144,6 +145,8 @@ export const onManageSentenceGame = {
             }
 
             let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+
+            await createTracking(_id)
 
             return res.status(200).send({
                 data: {

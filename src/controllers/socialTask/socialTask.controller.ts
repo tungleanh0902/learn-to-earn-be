@@ -1,3 +1,4 @@
+import { createTracking } from "../../controllers/tracking/tracking.controller"
 import { updatePointForRefUser } from "../../controllers/users/user.controller"
 import mongoose from "mongoose"
 
@@ -178,6 +179,7 @@ export const onManageSocialTask = {
                 })
 
                 let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+                await createTracking(_id)
 
                 return res.status(200).send({
                     data: {
