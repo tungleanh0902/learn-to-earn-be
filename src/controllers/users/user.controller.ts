@@ -508,8 +508,15 @@ export const onManageUser = {
                 currentSeqno = await walletContract.getSeqno();
             }
 
+            await TxOnchain.create({
+                userId: _id,
+                tx: "null",
+                action: "withdraw",
+                amount: amount
+            })
+
             user = await User.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(_id) }, {
-                bonusTon: (user.bonusTon*10**9 - amount*10**9)/(10**9)
+                bonusTon: ((user.bonusTon*10**9 - amount*10**9)/(10**9)).toFixed(9)
             }, {
                 new: true
             })
