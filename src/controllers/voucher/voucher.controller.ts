@@ -160,5 +160,23 @@ export const onManageVoucher = {
                 message: err.message
             });
         }
+    },
+
+    doGetAvailableVoucher: async (req: any, res: any, next: any) => {
+        try {
+            const vouchers = await Voucher.find({
+                owner: null
+            })
+            return res.status(200).send({
+                data: {
+                    vouchers
+                }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
     }
 }
