@@ -5,6 +5,9 @@ const userSchema = new mongoose.Schema({
     address: {
         type: String,
     },
+    evmAddress: {
+        type: String,
+    },
     username: {
         type: String,
     },
