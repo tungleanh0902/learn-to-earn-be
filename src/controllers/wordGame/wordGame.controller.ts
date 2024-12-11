@@ -6,7 +6,7 @@ var rwc = require("random-weighted-choice");
 
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
-const MeanMatchingAnswer = require('../../models/matchMeaningSchema')
+const MeanMatchingAnswer = require('../../models/matchMeaning.model')
 const Topics = require('../../models/topics.model')
 const User = require('../../models/users.model')
 
@@ -248,6 +248,7 @@ export const onManageWordGame = {
                 wordIdsAnswer: convertObjectId,
                 points,
                 topicId,
+                bonusTon,
                 userId: _id
             })
 
@@ -344,6 +345,7 @@ export const onManageWordGame = {
             await MeanMatchingAnswer.create({
                 answer: answers,
                 points,
+                bonusTon,
                 userId: _id
             })
 
