@@ -178,5 +178,51 @@ export const onManageVoucher = {
                 message: err.message
             });
         }
+    },
+
+    doGetVoucherBoughtFromRef: async (req: any, res: any, next: any) => {
+        try {
+            let userId = req.body?.userId
+            let lookup: any = [
+                { 
+                    $match: { 
+                        action: "buy_voucher",
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userId",
+                        foreignField: "_id",
+                        as: "user"
+                    }
+                },
+                { $unwind: "$user" },
+            ]
+            if (userId) {
+                lookup.push({
+                    "$match": {
+                        "user.refUser": new mongoose.Types.ObjectId(userId) 
+                    }
+                })
+            } else {
+                lookup.push({
+                    "$match": {
+                        "user.refUser" : {
+                            "$ne": null
+                        }
+                    }
+                })
+            }
+            let rs = await TxOnchain.aggregate(lookup)
+            return res.status(200).send({
+                data: rs
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
     }
 }

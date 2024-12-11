@@ -4,7 +4,7 @@ import mongoose from "mongoose"
 
 const SocialTask = require('../../models/socialTask.model')
 const SocialTaskDone = require('../../models/socialTaskDone.model')
-const CVProfile = require('../../models/cvprofile')
+const CVProfile = require('../../models/cvprofile.model')
 const User = require('../../models/users.model')
 
 require('dotenv').config()
