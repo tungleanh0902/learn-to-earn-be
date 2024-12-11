@@ -7,6 +7,7 @@ var rwc = require("random-weighted-choice");
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
 const MeanMatchingAnswer = require('../../models/matchMeaningSchema')
+const WordFillingAnswer = require('../../models/wordFillingSchema')
 const Topics = require('../../models/topics.model')
 const User = require('../../models/users.model')
 
@@ -342,6 +343,106 @@ export const onManageWordGame = {
             })
 
             await MeanMatchingAnswer.create({
+                answer: answers,
+                points,
+                userId: _id
+            })
+
+            if (user.refUser != null) {
+                await updatePointForRefUser(user.refUser.toString(), points * user.multiplier)
+            }
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            await createTracking(_id)
+
+            return res.status(200).send({
+                data: {
+                    points: points * user.multiplier,
+                    user: newUser,
+                    bonusTon
+                },
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    getGameWordFilling: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            if (user.tickets == 0) {
+                return res.status(400).send({
+                    message: "Out of tickets"
+                });
+            }
+
+            const words = await Words.aggregate([
+                { $match: { isHidden: false } },
+                { $sample: { size: 20 } }
+            ])
+
+            return res.status(200).send({
+                data: {
+                    challenge: words,
+                }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doAnswerWordFilling: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            let user = await User.findOne({ _id })
+            if (user.tickets == 0) {
+                return res.status(400).send({
+                    message: "Out of tickets"
+                });
+            }
+
+            const answers = req.body.answers
+
+            let points = 0
+            let answerLength = 30;
+            if (answers.length < 30) {
+                answerLength = answers.length
+            }
+            for (let index = 0; index < answerLength; index++) {
+                const answer = answers[index];
+                let word = await Words.findOne({ content: answer.content })
+                if (word.meaning == answer.meaning) {
+                    points+=100;
+                }
+            }
+
+            // random possibility of drop ton
+            var table = [
+                { weight: 1, id: 1 },
+                { weight: 9, id: 0 },
+            ];
+            let userTon = user?.bonusTon ?? 0
+            let bonusTon = 0
+            if (user.refCount >= 3 && rwc(table) == 1 && points >= 200) {
+                bonusTon = 0.01
+            }
+
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                points: user.points + points * user.multiplier,
+                tickets: user.tickets - 1,
+                bonusTon: userTon + bonusTon
+            })
+
+            await WordFillingAnswer.create({
                 answer: answers,
                 points,
                 userId: _id

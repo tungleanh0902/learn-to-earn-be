@@ -19,3 +19,8 @@ manageWordGame.post("/answer", validate.auth, onManageWordGame.doAnswer);
 manageWordGame.post("/get_game_match_meaning", validate.auth, onManageWordGame.getGameMatchMeaning);
 
 manageWordGame.post("/answer_match_meaning", validate.auth, onManageWordGame.doAnswerMatchMeaning);
+
+// manageWordGame.post("/get_game_match_word", validate.auth, onManageWordGame.getGameMatchWord);
+manageWordGame.post("/get_game_word_filling", validate.auth, onManageWordGame.getGameWordFilling);
+
+manageWordGame.post("/answer_word_filling", validate.auth, onManageWordGame.doAnswerWordFilling);
