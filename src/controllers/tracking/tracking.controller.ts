@@ -70,7 +70,9 @@ export const onManageTracking = {
                 }
             ]);
 
-            res.json(results);
+            return res.status(200).send({
+                data: results
+            });
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({
