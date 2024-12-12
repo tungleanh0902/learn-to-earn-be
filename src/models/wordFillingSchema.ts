@@ -16,4 +16,4 @@ const wordFillingSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.models.MeanMatchingAnswer || mongoose.model('WordFillingAnswer', wordFillingSchema);
+module.exports = mongoose.models.WordFillingAnswer || mongoose.model('WordFillingAnswer', wordFillingSchema);

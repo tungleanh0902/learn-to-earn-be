@@ -417,8 +417,8 @@ export const onManageWordGame = {
             }
             for (let index = 0; index < answerLength; index++) {
                 const answer = answers[index];
-                let word = await Words.findOne({ content: answer.content })
-                if (word.meaning == answer.meaning) {
+                let word = await Words.findOne({ _id: answer })
+                if (word) {
                     points+=100;
                 }
             }
