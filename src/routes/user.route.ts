@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { onManageUser } from "../controllers/users/user.controller";
-import { login } from "../controllers/users/auth";
+import { login, loginEvm } from "../controllers/users/auth";
 import { validate } from '../middlewares/authMiddle';
 
 export const manageUser = Router()
 
 manageUser.post("/login", login);
+
+manageUser.post("/login_evm", loginEvm);
 
 manageUser.post("/daily", validate.auth, onManageUser.doDailyAttendance);
 

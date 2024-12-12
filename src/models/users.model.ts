@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
     },
     evmAddress: {
         type: String,
+        unique: true
     },
     username: {
         type: String,
@@ -14,7 +15,6 @@ const userSchema = new mongoose.Schema({
     telegramUserId: {
         type: String,
         required: true,
-        unique: true
     },
     points: {
         type: Number,
