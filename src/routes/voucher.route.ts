@@ -10,6 +10,8 @@ manageVoucher.post("/change_voucher", validate.auth, validate.isAdmin, onManageV
 
 manageVoucher.post("/buy_voucher", validate.auth, onManageVoucher.doBuyVoucher);
 
+manageVoucher.post("/buy_voucher_kaia", validate.auth, onManageVoucher.doBuyVoucherKaia);
+
 manageVoucher.post("/get_vouchers", validate.auth, onManageVoucher.doGetVoucher);
 
 manageVoucher.post("/get_available_vouchers", onManageVoucher.doGetAvailableVoucher);

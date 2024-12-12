@@ -1,8 +1,9 @@
-import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE } from "../../config"
+import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE, BADGE_CONTRACT, MINT_NFT_FEE_EVM } from "../../config"
 import mongoose from "mongoose"
 import { Address, Cell } from "@ton/ton";
 import { getTxData } from "../../helper/helper";
 import { getNftAddress } from "../users/user.controller";
+import Web3 from "web3";
 
 const User = require('../../models/users.model')
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
@@ -112,6 +113,64 @@ export const onManageSeasonBadge = {
                 _id: new mongoose.Types.ObjectId(badgeId)
             }, {
                 nextItemIndex: badge.nextItemIndex + 1
+            })
+
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                multiplier: user.multiplier + 1
+            })
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            return res.status(200).send({
+                data: {
+                    user: newUser
+                }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doBuyNftKaia: async (req: any, res: any, next: any) => {
+        try {
+            const badgeId = req.body.badgeId
+            const _id = req.user.id
+            const tokenId = req.body.tokenId
+            const tx = req.body.tx
+
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+  
+            const web3 = new Web3(process.env.RPC_KAIA);
+            let txReceipt = await web3.eth.getTransactionReceipt(tx)
+            let txData = await web3.eth.getTransaction(tx)
+        
+            if (txReceipt.status.toString() != "1"
+                || user.evmAddress != txData.from
+                || BADGE_CONTRACT != txData.to
+                || MINT_NFT_FEE_EVM != txData.value
+            ) {
+                return res.status(400).send({
+                    message: "Invalid tx"
+                });
+            }
+
+            await SeasonBadgeTx.create({
+                badgeId,
+                userId: _id,
+                tokenId,
+                tx,
+                nftAddress: BADGE_CONTRACT
+            })
+
+            await TxOnchain.create({
+                userId: _id,
+                tx,
+                action: "mint_nft",
+                amount: MINT_NFT_FEE
             })
 
             await User.findOneAndUpdate({

@@ -5,13 +5,16 @@ const userSchema = new mongoose.Schema({
     address: {
         type: String,
     },
+    evmAddress: {
+        type: String,
+        unique: true
+    },
     username: {
         type: String,
     },
     telegramUserId: {
         type: String,
         required: true,
-        unique: true
     },
     points: {
         type: Number,

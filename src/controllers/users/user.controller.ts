@@ -1,10 +1,11 @@
 import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
-import { OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
+import { OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC, OWNER_ADDRESS_EVM, SAVE_STREAK_FEE_EVM, MORE_QUIZZ_FEE_EVM } from "../../config"
 import { Address, beginCell, Cell, internal, toNano, TonClient, WalletContractV4 } from "@ton/ton";
 import { getTxData, sleep } from "../../helper/helper";
 import { mnemonicToWalletKey } from '@ton/crypto';
 import { createTracking } from "../../controllers/tracking/tracking.controller";
+import Web3 from "web3";
 
 const SeasonBadgeTx = require('../../models/seasonBadgeTx.model')
 const User = require('../../models/users.model')
@@ -60,6 +61,25 @@ export const onManageUser = {
                     message: "Already daily checkin"
                 });
             }
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetUserInfo: async (req: any, res: any, next: any) => {
+        try {
+            const userId = req.body.userId
+            let user = await User.findOne({
+                _id: new mongoose.Types.ObjectId(userId)
+            })
+            return res.status(200).send({
+                data: {
+                    user: user
+                }
+            });
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({
@@ -138,6 +158,32 @@ export const onManageUser = {
                 _id: new mongoose.Types.ObjectId(_id)
             }, {
                 address: req.body.address,
+            })
+            return res.status(200).send({
+                message: "Success"
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doConnectEvmWallet: async (req: any, res: any) => {
+        try {
+            const _id = req.user.id
+            let user = await User.findOne({ evmAddress: req.body.evmAddress })
+            if (user != null) {
+                return res.status(400).send({
+                    message: "This wallet is already connected"
+                });
+            }
+
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                evmAddress: req.body.evmAddress.toLowerCase(),
             })
             return res.status(200).send({
                 message: "Success"
@@ -246,6 +292,53 @@ export const onManageUser = {
         }
     },
 
+    doSaveStreakKaia: async (req: any, res: any, next: any) => {
+        try {
+            const tx = req.body.tx
+            const _id = req.user.id
+
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            const web3 = new Web3(process.env.RPC_KAIA);
+            let txReceipt = await web3.eth.getTransactionReceipt(tx)
+            let txData = await web3.eth.getTransaction(tx)
+        
+            if (txReceipt.status.toString() != "1"
+                || user.evmAddress != txData.from
+                || OWNER_ADDRESS_EVM != txData.to
+                || SAVE_STREAK_FEE_EVM != txData.value
+            ) {
+                return res.status(400).send({
+                    message: "Invalid tx"
+                });
+            }
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                hasStreakSaver: true,
+            })
+
+            await TxOnchain.create({
+                userId: _id,
+                tx,
+                action: "save_streak",
+                amount: SAVE_STREAK_FEE
+            })
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            return res.status(200).send({
+                data: {
+                    user: newUser
+                }
+            });
+
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
     doBuyMoreQuizz: async (req: any, res: any, next: any) => {
         try {
             const _id = req.user.id
@@ -274,6 +367,54 @@ export const onManageUser = {
                 || ownerAddress != txData.data["out_msgs"][0].destination.address
                 || txData.data["success"] != true
                 || diffMins > 10
+            ) {
+                return res.status(400).send({
+                    message: "Invalid tx"
+                });
+            }
+
+            await User.findOneAndUpdate({
+                _id: new mongoose.Types.ObjectId(_id)
+            }, {
+                moreQuizz: user.moreQuizz + 8,
+            })
+
+            await TxOnchain.create({
+                userId: _id,
+                tx,
+                action: "buy_quizz",
+                amount: MORE_QUIZZ_FEE
+            })
+
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            return res.status(200).send({
+                data: {
+                    user: newUser
+                }
+            });
+
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doBuyMoreQuizzKaia: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            const tx = req.body.tx
+
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            
+            const web3 = new Web3(process.env.RPC_KAIA);
+            let txReceipt = await web3.eth.getTransactionReceipt(tx)
+            let txData = await web3.eth.getTransaction(tx)
+            if (txReceipt.status.toString() != "1"
+                || user.evmAddress != txData.from
+                || OWNER_ADDRESS_EVM != txData.to
+                || MORE_QUIZZ_FEE_EVM != txData.value
             ) {
                 return res.status(400).send({
                     message: "Invalid tx"
