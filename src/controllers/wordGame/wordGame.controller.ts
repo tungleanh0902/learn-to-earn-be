@@ -249,6 +249,7 @@ export const onManageWordGame = {
                 wordIdsAnswer: convertObjectId,
                 points,
                 topicId,
+                bonusTon,
                 userId: _id
             })
 
@@ -345,6 +346,7 @@ export const onManageWordGame = {
             await MeanMatchingAnswer.create({
                 answer: answers,
                 points,
+                bonusTon,
                 userId: _id
             })
 

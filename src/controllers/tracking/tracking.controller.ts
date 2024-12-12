@@ -1,6 +1,10 @@
 import mongoose from "mongoose"
 
 const Tracking = require('../../models/tracking.model')
+const QuizzAnswer = require('../../models/quizzAnswer.model')
+const Cvprofile = require('../../models/cvprofile.model')
+const MeanMatchingAnswer = require('../../models/matchMeaning.model')
+const WordAnswer = require('../../models/wordAnswer.model')
 
 export const onManageTracking = {
     doGetDAU: async (req: any, res: any, next: any) => {
@@ -66,7 +70,9 @@ export const onManageTracking = {
                 }
             ]);
 
-            res.json(results);
+            return res.status(200).send({
+                data: results
+            });
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({
@@ -74,6 +80,169 @@ export const onManageTracking = {
             });
         }
     },
+
+    doGetDailyAnswerQuizz: async (req: any, res: any, next: any) => {
+        try {
+            const results = await QuizzAnswer.aggregate([
+                {
+                    $match: {
+                        isCampaign: false,
+                    }
+                },
+                {
+                    $project: {
+                        date: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$date", // Group by normalized date
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        date: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
+                        answersPerUser: {
+                            $cond: {
+                                if: { $eq: [{ $size: "$uniqueUsers" }, 0] }, // Avoid division by zero
+                                then: 0,
+                                else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { date: 1 }, // Sort by date in ascending order
+                },
+            ]);
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetDailyDropGame: async (req: any, res: any, next: any) => {
+        try {
+            let results = await WordAnswer.aggregate([
+                {
+                    $project: {
+                        date: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$date", // Group by normalized date
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        date: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
+                        answersPerUser: {
+                            $cond: {
+                                if: { $eq: [{ $size: "$uniqueUsers" }, 0] }, // Avoid division by zero
+                                then: 0,
+                                else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { date: 1 }, // Sort by date in ascending order
+                },
+            ])
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetDailyMatchMeaning: async (req: any, res: any, next: any) => {
+        try {
+            let results = await MeanMatchingAnswer.aggregate([
+                {
+                    $project: {
+                        date: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$date", // Group by normalized date
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        date: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
+                        answersPerUser: {
+                            $cond: {
+                                if: { $eq: [{ $size: "$uniqueUsers" }, 0] }, // Avoid division by zero
+                                then: 0,
+                                else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { date: 1 }, // Sort by date in ascending order
+                },
+            ])
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetAllCv: async (req: any, res: any, next: any) => {
+        try {
+            let rs = await Cvprofile.find();
+            return res.status(200).send({
+                data: rs
+            }); 
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    }
 }
 
 export async function createTracking(userId: string) {

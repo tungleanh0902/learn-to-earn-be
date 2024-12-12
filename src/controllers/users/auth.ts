@@ -62,3 +62,56 @@ export async function login (req: any, res: any) {
         })
     }
 }
+
+export async function loginEvm (req: any, res: any) {
+    try {
+        const evmAddress = req.body.evmAddress.toLowerCase()
+
+        let user = await User.findOne({ evmAddress })
+
+        if (!user) {
+            user = await User.create({
+                telegramUserId: evmAddress,
+                points: 0,
+                tickets: 0,
+                role: "user",
+                refCode: "0",
+                username: evmAddress,
+                evmAddress
+            })
+        }
+
+        const payload = {
+            id: user._id,
+            role: user.role,
+        }
+        //now lets create a JWT token
+        let token = jwt.sign(payload,
+            process.env.JWT_SECRET || "",
+            { expiresIn: "7d" }
+        )
+        user = user.toObject()
+        user.token = token
+
+        const options = {
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60),
+            httpOnly: true  //It will make cookie not accessible on clinet side -> good way to keep hackers away
+        }
+        res.cookie(
+            "token",
+            token,
+            options
+        ).status(200).json({
+            success: true,
+            token,
+            user,
+            message: "Logged in Successfully✅"
+        })
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({
+            success: false,
+            message: "Login failure⚠️ :" + error
+        })
+    }
+}

@@ -2,7 +2,8 @@ import mongoose from "mongoose"
 import { Address, Cell } from "@ton/ton";
 import { getTxData } from "../../helper/helper";
 import { getNftAddress } from "../users/user.controller";
-import { tonQuery, OWNER_ADDRESS, BUY_VOUCHER, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC } from "../../config"
+import { tonQuery, OWNER_ADDRESS, BUY_VOUCHER, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC, OWNER_ADDRESS_EVM, BUY_VOUCHER_EVM, BADGE_CONTRACT } from "../../config"
+import Web3 from 'web3';
 
 const User = require('../../models/users.model')
 const TxOnchain = require('../../models/txOnchain.model')
@@ -54,6 +55,60 @@ export const onManageVoucher = {
 
             return res.status(200).send({
                 data: "success"
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doBuyVoucherKaia: async (req: any, res: any, next: any) => {
+        try {
+            const _id = req.user.id
+            const tx = req.body.tx
+            let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            if (!user.evmAddress) {
+                return res.status(400).send({
+                    message: "Account not link evm wallet yet"
+                });
+            }
+            const web3 = new Web3(process.env.RPC_KAIA);
+            let txReceipt = await web3.eth.getTransactionReceipt(tx)
+            let txData = await web3.eth.getTransaction(tx)
+            console.log(txData.from);
+            console.log(user.evmAddress);
+            if (txReceipt.status.toString() != "1"
+                || user.evmAddress != txData.from
+                || OWNER_ADDRESS_EVM != txData.to
+                || BUY_VOUCHER_EVM != txData.value
+            ) {
+                return res.status(400).send({
+                    message: "Invalid tx"
+                });
+            }
+
+            let voucher = await Voucher.findOneAndUpdate({ owner: null }, {
+                owner: _id
+            }, {
+                new: true
+            })
+
+            await TxOnchain.create({
+                userId: _id,
+                tx,
+                action: "buy_voucher",
+                amount: BUY_VOUCHER,
+                voucherId: voucher._id
+            })
+            
+            let newUser = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
+            return res.status(200).send({
+                data: {
+                    user: newUser,
+                    voucher
+                }
             });
         } catch (err: any) {
             console.log(err.message)
@@ -171,6 +226,52 @@ export const onManageVoucher = {
                 data: {
                     vouchers
                 }
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetVoucherBoughtFromRef: async (req: any, res: any, next: any) => {
+        try {
+            let userId = req.body?.userId
+            let lookup: any = [
+                { 
+                    $match: { 
+                        action: "buy_voucher",
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userId",
+                        foreignField: "_id",
+                        as: "user"
+                    }
+                },
+                { $unwind: "$user" },
+            ]
+            if (userId) {
+                lookup.push({
+                    "$match": {
+                        "user.refUser": new mongoose.Types.ObjectId(userId) 
+                    }
+                })
+            } else {
+                lookup.push({
+                    "$match": {
+                        "user.refUser" : {
+                            "$ne": null
+                        }
+                    }
+                })
+            }
+            let rs = await TxOnchain.aggregate(lookup)
+            return res.status(200).send({
+                data: rs
             });
         } catch (err: any) {
             console.log(err.message)
