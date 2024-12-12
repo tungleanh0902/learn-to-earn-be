@@ -6,8 +6,8 @@ var rwc = require("random-weighted-choice");
 
 const Words = require('../../models/words.model')
 const WordAnswer = require('../../models/wordAnswer.model')
-const MeanMatchingAnswer = require('../../models/matchMeaningSchema')
-const WordFillingAnswer = require('../../models/wordFillingSchema')
+const MeanMatchingAnswer = require('../../models/matchMeaning.model')
+const WordFillingAnswer = require('../../models/wordFilling.model')
 const Topics = require('../../models/topics.model')
 const User = require('../../models/users.model')
 
