@@ -134,6 +134,59 @@ export const onManageTracking = {
         }
     },
 
+    doGetHourlyAnswerQuizz: async (req: any, res: any, next: any) => {
+        try {
+            const results = await QuizzAnswer.aggregate([
+                {
+                    $match: {
+                        isCampaign: false,
+                    }
+                },
+                {
+                    $project: {
+                        hour: {
+                            $dateToString: { format: "%Y-%m-%dT%H:00:00", date: "$createdAt" }, // Group by hour
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$hour", // Group by normalized hour
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        hour: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
+                        answersPerUser: {
+                            $cond: {
+                                if: { $eq: [{ $size: "$uniqueUsers" }, 0] }, // Avoid division by zero
+                                then: 0,
+                                else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { hour: 1 }, // Sort by hour in ascending order
+                },
+            ]);
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
     doGetDailyDropGame: async (req: any, res: any, next: any) => {
         try {
             let results = await WordAnswer.aggregate([
@@ -182,6 +235,54 @@ export const onManageTracking = {
         }
     },
 
+    doGetHourlyDropGame: async (req: any, res: any, next: any) => {
+        try {
+            let results = await WordAnswer.aggregate([
+                {
+                    $project: {
+                        hour: {
+                            $dateToString: { format: "%Y-%m-%dT%H:00:00", date: "$createdAt" }, // Format to group by hour
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$hour", // Group by normalized hour
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        hour: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
+                        answersPerUser: {
+                            $cond: {
+                                if: { $eq: [{ $size: "$uniqueUsers" }, 0] }, // Avoid division by zero
+                                then: 0,
+                                else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { hour: 1 }, // Sort by hour in ascending order
+                },
+            ])
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
     doGetDailyMatchMeaning: async (req: any, res: any, next: any) => {
         try {
             let results = await MeanMatchingAnswer.aggregate([
@@ -213,6 +314,95 @@ export const onManageTracking = {
                                 else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
                             },
                         },
+                    },
+                },
+                {
+                    $sort: { date: 1 }, // Sort by date in ascending order
+                },
+            ])
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetHourlyMatchMeaning: async (req: any, res: any, next: any) => {
+        try {
+            let results = await MeanMatchingAnswer.aggregate([
+                {
+                    $project: {
+                        hour: {
+                            $dateToString: { format: "%Y-%m-%dT%H:00:00", date: "$createdAt" }, // Format to group by hour
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$hour", // Group by normalized hour
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        hour: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
+                        answersPerUser: {
+                            $cond: {
+                                if: { $eq: [{ $size: "$uniqueUsers" }, 0] }, // Avoid division by zero
+                                then: 0,
+                                else: { $divide: ["$totalAnswers", { $size: "$uniqueUsers" }] },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { hour: 1 }, // Sort by hour in ascending order
+                },
+            ])
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetCvSubmit: async (req: any, res: any, next: any) => {
+        try {
+            let results = await Cvprofile.aggregate([
+                {
+                    $project: {
+                        date: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                        },
+                        userId: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$date", // Group by normalized date
+                        totalAnswers: { $sum: 1 }, // Count total answers
+                        uniqueUsers: { $addToSet: "$userId" }, // Collect unique user IDs
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        date: "$_id",
+                        totalAnswers: 1,
+                        totalUniqueUsers: { $size: "$uniqueUsers" }, // Count unique users
                     },
                 },
                 {

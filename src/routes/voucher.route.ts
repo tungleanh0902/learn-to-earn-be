@@ -16,4 +16,4 @@ manageVoucher.post("/get_vouchers", validate.auth, onManageVoucher.doGetVoucher)
 
 manageVoucher.post("/get_available_vouchers", onManageVoucher.doGetAvailableVoucher);
 
-manageVoucher.post("/get_voucher_ref", validate.auth, validate.isAdmin, onManageVoucher.doGetVoucherBoughtFromRef);
+manageVoucher.post("/get_voucher_ref", onManageVoucher.doGetVoucherBoughtFromRef);
