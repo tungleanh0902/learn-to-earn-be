@@ -2,7 +2,7 @@ import { helperFunction } from "../seasonBadge/seasonBadge.controller"
 import mongoose from "mongoose"
 import { OWNER_ADDRESS, SAVE_STREAK_FEE, MORE_QUIZZ_FEE, SHARE_REF, MINT_NFT_FEE, STORE_FEE, TON_CENTER_RPC, OWNER_ADDRESS_EVM, SAVE_STREAK_FEE_EVM, MORE_QUIZZ_FEE_EVM } from "../../config"
 import { Address, beginCell, Cell, internal, toNano, TonClient, WalletContractV4 } from "@ton/ton";
-import { getTxData, sleep } from "../../helper/helper";
+import { getTransactionByMessage, getTxData, sleep } from "../../helper/helper";
 import { mnemonicToWalletKey } from '@ton/crypto';
 import { createTracking } from "../../controllers/tracking/tracking.controller";
 import Web3 from "web3";
@@ -235,9 +235,10 @@ export const onManageUser = {
             const boc = req.body.boc
             const _id = req.user.id
 
-            let tx = Cell.fromBase64(boc).hash().toString("base64")
+            let message_hash = Cell.fromBase64(boc).hash().toString("hex")
+            let hash = await getTransactionByMessage(message_hash)
             let txData = await getTxData({
-                hash: tx,
+                hash,
                 refetchLimit: 60
             })
             if (txData == null) {
@@ -247,16 +248,16 @@ export const onManageUser = {
             }
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
-            let time = txData.data["utime"] * 1000
+            let time = txData["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
             let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
             let ownerAddress = Address.parse(OWNER_ADDRESS).toRawString()
 
-            if (SAVE_STREAK_FEE != txData.data["out_msgs"][0].value.toString()
-                || user.address != txData.data["out_msgs"][0].source.address
-                || ownerAddress != txData.data["out_msgs"][0].destination.address
-                || txData.data["success"] != true
+            if (SAVE_STREAK_FEE != txData["out_msgs"][0].value.toString()
+                || user.address != txData["out_msgs"][0].source.address
+                || ownerAddress != txData["out_msgs"][0].destination.address
+                || txData["success"] != true
                 || diffMins > 10
             ) {
                 return res.status(400).send({
@@ -272,7 +273,7 @@ export const onManageUser = {
 
             await TxOnchain.create({
                 userId: _id,
-                tx,
+                tx: hash,
                 action: "save_streak",
                 amount: SAVE_STREAK_FEE
             })
@@ -343,10 +344,13 @@ export const onManageUser = {
         try {
             const _id = req.user.id
             const boc = req.body.boc
-
-            let tx = Cell.fromBase64(boc).hash().toString("base64")
+            console.log(boc);
+            
+            let message_hash = Cell.fromBase64(boc).hash().toString("hex")
+            let hash = await getTransactionByMessage(message_hash)
+            console.log(hash);
             let txData = await getTxData({
-                hash: tx,
+                hash,
                 refetchLimit: 60
             })
             if (txData == null) {
@@ -356,16 +360,16 @@ export const onManageUser = {
             }
             let user = await User.findOne({ _id: new mongoose.Types.ObjectId(_id) })
 
-            let time = txData.data["utime"] * 1000
+            let time = txData["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
             let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
             let ownerAddress = Address.parse(OWNER_ADDRESS).toRawString()
 
-            if (MORE_QUIZZ_FEE != txData.data["out_msgs"][0].value.toString()
-                || user.address != txData.data["out_msgs"][0].source.address
-                || ownerAddress != txData.data["out_msgs"][0].destination.address
-                || txData.data["success"] != true
+            if (MORE_QUIZZ_FEE != txData["out_msgs"][0].value.toString()
+                || user.address != txData["out_msgs"][0].source.address
+                || ownerAddress != txData["out_msgs"][0].destination.address
+                || txData["success"] != true
                 || diffMins > 10
             ) {
                 return res.status(400).send({
@@ -381,7 +385,7 @@ export const onManageUser = {
 
             await TxOnchain.create({
                 userId: _id,
-                tx,
+                tx: hash,
                 action: "buy_quizz",
                 amount: MORE_QUIZZ_FEE
             })

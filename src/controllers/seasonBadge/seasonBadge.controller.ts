@@ -1,7 +1,7 @@
 import { tonQuery, MINT_NFT_OPCODE, MINT_NFT_FEE, BADGE_CONTRACT, MINT_NFT_FEE_EVM } from "../../config"
 import mongoose from "mongoose"
 import { Address, Cell } from "@ton/ton";
-import { getTxData } from "../../helper/helper";
+import { getTransactionByMessage, getTxData, sleep } from "../../helper/helper";
 import { getNftAddress } from "../users/user.controller";
 import Web3 from "web3";
 
@@ -61,9 +61,10 @@ export const onManageSeasonBadge = {
             let badge = await SeasonBadge.findOne({
                 _id: new mongoose.Types.ObjectId(badgeId)
             })
-            let tx = Cell.fromBase64(boc).hash().toString("base64")
+            let message_hash = Cell.fromBase64(boc).hash().toString("hex")
+            let hash = await getTransactionByMessage(message_hash)
             let txData = await getTxData({
-                hash: tx,
+                hash,
                 refetchLimit: 60
             })
             if (txData == null) {
@@ -71,14 +72,14 @@ export const onManageSeasonBadge = {
                     message: "Invalid boc"
                 });
             }
-            let time = txData.data["utime"] * 1000
+            let time = txData["utime"] * 1000
             let txTime = new Date(time)
             let now = new Date()
             let diffMins = Math.round((now.getTime() - txTime.getTime()) / (60 * 60 * 1000));
-            if (MINT_NFT_OPCODE != txData.data["out_msgs"][0].op_code
-                || user.address != txData.data["out_msgs"][0].source.address
-                || Address.parse(badge.address).toRawString() != txData.data["out_msgs"][0].destination.address
-                || txData.data["success"] != true
+            if (MINT_NFT_OPCODE != txData["out_msgs"][0].op_code
+                || user.address != txData["out_msgs"][0].source.address
+                || Address.parse(badge.address).toRawString() != txData["out_msgs"][0].destination.address
+                || txData["success"] != true
                 || diffMins > 10
             ) {
                 return res.status(400).send({
@@ -98,13 +99,13 @@ export const onManageSeasonBadge = {
                 badgeId,
                 userId: _id,
                 tokenId,
-                tx,
+                tx: hash,
                 nftAddress
             })
 
             await TxOnchain.create({
                 userId: _id,
-                tx,
+                tx: hash,
                 action: "mint_nft",
                 amount: MINT_NFT_FEE
             })

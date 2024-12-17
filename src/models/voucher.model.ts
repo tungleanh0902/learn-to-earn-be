@@ -21,6 +21,14 @@ const voucherSchema = new mongoose.Schema({
     createdBy: {
         type: mongoose.Types.ObjectId,
         required: true
+    },
+    forSale: {
+        type: Boolean, 
+        default: false
+    },
+    price: {
+        type: String,
+        default: "0"
     }
 }, {
     timestamps: true

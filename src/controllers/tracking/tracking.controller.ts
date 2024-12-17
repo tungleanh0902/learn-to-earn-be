@@ -5,6 +5,7 @@ const QuizzAnswer = require('../../models/quizzAnswer.model')
 const Cvprofile = require('../../models/cvprofile.model')
 const MeanMatchingAnswer = require('../../models/matchMeaning.model')
 const WordAnswer = require('../../models/wordAnswer.model')
+const User = require('../../models/users.model')
 
 export const onManageTracking = {
     doGetDAU: async (req: any, res: any, next: any) => {
@@ -426,6 +427,59 @@ export const onManageTracking = {
             return res.status(200).send({
                 data: rs
             }); 
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetNewUserByDate: async (req: any, res: any, next: any) => {
+        try {
+            let results = await User.aggregate([
+                {
+                    $project: {
+                        date: {
+                            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                        },
+                        _id: 1, // Include userId for unique user counting
+                    },
+                },
+                {
+                    $group: {
+                        _id: "$date", // Group by normalized date
+                        totalUsers: { $sum: 1 }, // Count total answers
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        date: "$_id",
+                        totalUsers: 1,
+                    },
+                },
+                {
+                    $sort: { date: 1 }, // Sort by date in ascending order
+                },
+            ])
+            return res.status(200).send({
+                data: results
+            });
+        } catch (err: any) {
+            console.log(err.message)
+            return res.status(400).send({
+                message: err.message
+            });
+        }
+    },
+
+    doGetTotalUsers: async (req: any, res: any, next: any) => {
+        try {
+            let results = await User.countDocuments();
+            return res.status(200).send({
+                data: results
+            });
         } catch (err: any) {
             console.log(err.message)
             return res.status(400).send({

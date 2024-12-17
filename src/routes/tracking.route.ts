@@ -23,3 +23,7 @@ manageTracking.post("/mean_matching_by_hour", onManageTracking.doGetHourlyMatchM
 manageTracking.post("/cv_submit", onManageTracking.doGetCvSubmit);
 
 manageTracking.post("/cv_profile", onManageTracking.doGetAllCv);
+
+manageTracking.post("/user_by_day", onManageTracking.doGetNewUserByDate);
+
+manageTracking.post("/total_users", onManageTracking.doGetTotalUsers);
